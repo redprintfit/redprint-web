@@ -195,7 +195,7 @@ export function Hero() {
           backgroundImage: "url(/textures/paper.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.08,
+          opacity: 0.05,
         }}
       />
 
