@@ -245,7 +245,7 @@ export function Hero() {
           </div>
 
           <h1
-            className="text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl"
+            className="text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-5xl lg:text-6xl"
             style={{ fontWeight: 800 }}
           >
             <TypewriterText text={HEADLINE} start={typingStarted} />

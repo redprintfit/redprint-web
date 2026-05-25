@@ -18,11 +18,27 @@ type Props = {
   paused?: boolean;
 };
 
+/** Item size in px (matches md:h-14 md:w-14 = 3.5rem = 56px). */
+const ITEM_SIZE = 56;
+/** Cumulative x position (left edge) for each slot. Gaps after each slot
+ *  shrink the further from active: 18 / 10 / 6 px. */
+const SLOT_X = [
+  0,
+  ITEM_SIZE + 18, // 74
+  ITEM_SIZE + 18 + ITEM_SIZE + 10, // 140
+  ITEM_SIZE + 18 + ITEM_SIZE + 10 + ITEM_SIZE + 6, // 202
+];
+const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // 258
+
 /**
  * Horizontal "wheel picker" carousel. Active item is leftmost and fully
  * opaque; subsequent items get progressively more transparent and
  * horizontally compressed. Autoplays in uncontrolled mode; in controlled
  * mode, the parent supplies `activeIndex`.
+ *
+ * Items are absolutely positioned and tweened via `x` rather than flex +
+ * margin + layout animation — that approach was leaving the active item
+ * stuck at its `initial.x` because `x` wasn't included in `animate`.
  */
 export function OrgCarousel({
   orgs,
@@ -54,40 +70,34 @@ export function OrgCarousel({
   );
 
   return (
-    <div className="flex items-center">
-      {/* popLayout = exiting org is removed from flex flow immediately so
-          the remaining orgs can slide left in sync with the exit + colors. */}
-      <AnimatePresence initial={false} mode="popLayout">
+    <div
+      className="relative"
+      style={{ width: TRACK_WIDTH, height: ITEM_SIZE }}
+    >
+      <AnimatePresence initial={false}>
         {visible.map((org, pos) => {
-          // Opacity falls off faster for on-deck items.
           const opacity =
             pos === 0 ? 1 : ([null, 0.5, 0.3, 0.18][pos] ?? 0.15);
           const scaleX = pos === 0 ? 1 : Math.max(0.5, 1 - pos * 0.15);
           const scaleY = pos === 0 ? 1 : Math.max(0.8, 1 - pos * 0.06);
-          // Spacing shrinks the further from the active item.
-          // pos 0 has no left gap; later positions get progressively tighter.
-          const gap = pos === 0 ? 0 : ([null, 18, 10, 6][pos] ?? 4);
+          const x = SLOT_X[pos] ?? SLOT_X[SLOT_X.length - 1] + 60;
 
           return (
             <motion.div
               key={org.id}
-              layout
-              // Entering items start far to the right at the back-of-rotation
-              // size, then slide leftward in sync with the other items shifting.
-              initial={{ opacity: 0, x: 90, scaleX: 0.5, scaleY: 0.8 }}
-              animate={{ opacity, scaleX, scaleY }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{
-                duration: 0.6,
-                ease: [0.22, 1, 0.36, 1],
-                layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+              className="absolute left-0 top-0"
+              style={{
+                width: ITEM_SIZE,
+                height: ITEM_SIZE,
+                transformOrigin: "left center",
               }}
-              // marginLeft as static style (not animated) so framer's layout
-              // animation handles the position shift cleanly. Animating
-              // marginLeft alongside layout was leaving the active item
-              // visually indented from the column's leading edge.
-              style={{ marginLeft: gap }}
-              className="relative h-12 w-12 origin-center md:h-14 md:w-14"
+              // Entering items start ~80px past their final slot, smaller
+              // and invisible — so they slide leftward in sync with the
+              // shifting items, "from the back of the rotation".
+              initial={{ opacity: 0, x: x + 80, scaleX: 0.5, scaleY: 0.8 }}
+              animate={{ opacity, scaleX, scaleY, x }}
+              exit={{ opacity: 0, x: x - 60 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
               <OrgLogoPlaceholder org={org} active={pos === 0} />
             </motion.div>
