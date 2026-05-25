@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { orgs, darken, lighten, type Org } from "@/lib/content/orgs";
 import { PhoneFrame } from "@/components/phone/PhoneFrame";
-import { CommunityScreen } from "@/components/phone/screens/CommunityScreen";
-import { ExerciseProgressScreen } from "@/components/phone/screens/ExerciseProgressScreen";
-import { AnalyticsScreen } from "@/components/phone/screens/AnalyticsScreen";
+import { ExerciseRedprintView } from "@/components/phone/screens/ExerciseRedprintView";
+import { AIChatbotView } from "@/components/phone/screens/AIChatbotView";
+import { CommunityView } from "@/components/phone/screens/CommunityView";
+import { HomeWorkoutView } from "@/components/phone/screens/HomeWorkoutView";
+import { ExerciseHistoryAnalysisView } from "@/components/phone/screens/ExerciseHistoryAnalysisView";
 import { OrgCarousel } from "@/components/sections/OrgCarousel";
 import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
@@ -21,20 +23,27 @@ const ROTATION_DURATION = 0.6;
 const ROTATION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const SCREENS = [
-  { id: "community", Component: CommunityScreen },
-  { id: "exercise", Component: ExerciseProgressScreen },
-  { id: "analytics", Component: AnalyticsScreen },
+  { id: "exercise-redprint", Component: ExerciseRedprintView },
+  { id: "ai-chatbot", Component: AIChatbotView },
+  { id: "community", Component: CommunityView },
+  { id: "home-workout", Component: HomeWorkoutView },
+  { id: "exercise-history", Component: ExerciseHistoryAnalysisView },
 ] as const;
 
-/** Per-slot transforms (slot 0 = front 100%, 1 = mid-fan 90%, 2 = back-fan 80%). */
+/**
+ * 5 slots — 3 visible (front / mid-fan / back-fan), 2 hidden (off-stage left).
+ * Phones cycle through all 5 positions; only the first three are visible.
+ */
 function slotTransforms(slide: number) {
   return [
-    { x: -slide, rotate: 0, scale: 1 },
-    { x: -slide - 60, rotate: -12, scale: 0.9 },
-    { x: -slide - 115, rotate: -24, scale: 0.8 },
+    { x: -slide, rotate: 0, scale: 1, opacity: 1 }, // 0: front
+    { x: -slide - 60, rotate: -12, scale: 0.9, opacity: 1 }, // 1: mid-fan
+    { x: -slide - 115, rotate: -24, scale: 0.8, opacity: 1 }, // 2: back-fan
+    { x: -slide - 180, rotate: -36, scale: 0.7, opacity: 0 }, // 3: hidden
+    { x: -slide - 240, rotate: -48, scale: 0.6, opacity: 0 }, // 4: hidden
   ];
 }
-const SLOT_Z = [30, 20, 10];
+const SLOT_Z = [40, 30, 20, 10, 0];
 
 export function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -49,10 +58,6 @@ export function Hero() {
   const [phoneTick, setPhoneTick] = useState(0);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
-  // Front phone x-shift from the bounded container's center. Composition
-  // sits inside max-w-7xl so this is a fixed pixel value, not viewport-
-  // relative — the gap between phones and text stays constant on wide
-  // displays instead of drifting apart.
   const slide = 220;
   const slideRef = useRef(slide);
 
@@ -82,7 +87,7 @@ export function Hero() {
       fanRightRef.current,
     ];
 
-    // Initial state — all phones invisible at viewport center, full scale.
+    // Initial state — front 3 phones invisible at viewport center, full scale.
     gsap.set(phoneRefs, { opacity: 0, y: 60, x: 0, rotate: 0, scale: 1 });
     gsap.set(markRef.current, { opacity: 0, x: -40 });
     gsap.set(carouselRef.current, { opacity: 0, y: 30 });
@@ -92,26 +97,18 @@ export function Hero() {
       if (played) return;
       played = true;
 
-      // Read latest slide value at play-time (not effect-time) so the
-      // opening doesn't have to depend on `slide` and re-run on resize.
       const targets = slotTransforms(slideRef.current);
       const tl = gsap.timeline({
         onComplete: () => setOpeningDone(true),
       });
 
-      // 1. Front phone fades in + rises into center
       tl.to(frontPhoneRef.current, {
         opacity: 1,
         y: 0,
         duration: 0.9,
         ease: "power2.out",
       });
-
-      // 2. Hold
       tl.to({}, { duration: 0.4 });
-
-      // 3. Phones move to their slot positions in parallel.
-      //    Front slides slightly left; fan phones rotate + scale down from behind.
       tl.to(
         frontPhoneRef.current,
         { ...targets[0], duration: 1, ease: "power3.out" },
@@ -119,26 +116,20 @@ export function Hero() {
       );
       tl.to(
         fanLeftRef.current,
-        { opacity: 1, ...targets[1], duration: 1, ease: "power3.out" },
+        { ...targets[1], duration: 1, ease: "power3.out" },
         "shift",
       );
       tl.to(
         fanRightRef.current,
-        { opacity: 1, ...targets[2], duration: 1, ease: "power3.out" },
+        { ...targets[2], duration: 1, ease: "power3.out" },
         "shift",
       );
-
-      // 4. Logo slides in from behind
       tl.to(
         markRef.current,
         { opacity: 1, x: 0, duration: 0.7, ease: "power2.out" },
         "shift",
       );
-
-      // 5. Typing kicks in partway through the shift
       tl.call(() => setTypingStarted(true), [], "shift+=0.3");
-
-      // 6. Carousel + CTAs settle in
       tl.to(
         carouselRef.current,
         { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
@@ -160,9 +151,6 @@ export function Hero() {
     observer.observe(sectionRef.current);
 
     return () => observer.disconnect();
-    // Intentionally empty deps: opening should run exactly once on mount.
-    // Resize-driven slide updates flow through Framer's animate prop, not
-    // through replaying the opening sequence.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,9 +167,11 @@ export function Hero() {
 
   const targets = slotTransforms(slide);
 
-  // Each phone's slot = (screenIndex - phoneTick) mod 3
+  // Each phone's slot = (screenIndex - phoneTick) mod N (5).
+  // Slots 0/1/2 are visible front/mid/back; 3/4 are hidden off-stage.
   const slotForScreen = (screenIndex: number) =>
-    ((screenIndex - phoneTick) % SCREENS.length + SCREENS.length) % SCREENS.length;
+    (((screenIndex - phoneTick) % SCREENS.length) + SCREENS.length) %
+    SCREENS.length;
 
   return (
     <section
@@ -198,28 +188,24 @@ export function Hero() {
         }}
       />
 
-      {/* Inner bounded container — caps the composition width so phones
-          and text don't drift apart on wide viewports. The container
-          (and everything inside) stays centered via mx-auto. */}
       <div className="relative z-10 mx-auto h-full max-w-7xl">
-        {/* Phone stage: absolute inside the container; phones flex-center
-            on the container, which sits at viewport center on wide screens. */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           {SCREENS.map(({ id, Component }, i) => {
             const slot = slotForScreen(i);
+            // Refs only used during opening sequence (slots 0/1/2 get the
+            // three refs). After openingDone, Framer drives by slot.
             const ref =
               slot === 0
                 ? frontPhoneRef
                 : slot === 1
                   ? fanLeftRef
-                  : fanRightRef;
-            // We assign refs by SLOT, not by phone — so GSAP's opening
-            // sequence (which targets refs) always hits the right phone.
-            // After openingDone, Framer drives transforms per-phone-id.
+                  : slot === 2
+                    ? fanRightRef
+                    : null;
             return (
               <motion.div
                 key={id}
-                ref={openingDone ? undefined : ref}
+                ref={openingDone ? undefined : (ref ?? undefined)}
                 className="absolute"
                 initial={false}
                 animate={openingDone ? targets[slot] : undefined}
@@ -234,8 +220,6 @@ export function Hero() {
           })}
         </div>
 
-        {/* Right-side text column — anchored to the bounded container's
-            right edge so the gap to the phone stack stays constant. */}
         <div className="absolute inset-y-0 right-6 flex w-[580px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
           <div ref={markRef} className="text-fg-base">
             <RedprintMark className="h-9 w-9" />

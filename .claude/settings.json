@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/michaelheitz/Desktop/Redprint5/**)",
+      "Read(/Users/michaelheitz/Desktop/RedprintReact/**)",
+      "Read(/Users/michaelheitz/Desktop/redprint-backend/**)",
+      "Read(/Users/michaelheitz/Desktop/Redprint Files/**)",
+      "Bash(curl -s *)",
+      "Bash(curl -sI *)",
+      "Bash(open *)",
+      "Bash(kill *)",
+      "Bash(pkill -f *)",
+      "Bash(lsof -i *)",
+      "Bash(lsof -ti *)",
+      "Bash(mkdir -p *)",
+      "Bash(touch *)",
+      "Bash(cp *)"
+    ]
+  }
+}
