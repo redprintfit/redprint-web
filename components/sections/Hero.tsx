@@ -190,10 +190,12 @@ export function Hero() {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: "url(/textures/noise.png)",
-          backgroundSize: "400px",
+          backgroundImage: "url(/textures/paper.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.15,
         }}
       />
 
