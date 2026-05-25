@@ -5,7 +5,7 @@ export default function HomePage() {
     <>
       <Hero />
       {/* Spacer so there's something to scroll past after the pinned hero. */}
-      <section className="flex h-screen items-center justify-center text-white/60">
+      <section className="text-fg-muted flex h-screen items-center justify-center">
         <p>Next section placeholder</p>
       </section>
     </>

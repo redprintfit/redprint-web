@@ -118,8 +118,9 @@ function OrgLogoPlaceholder({ org, active }: { org: Org; active: boolean }) {
       className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
       style={{
         backgroundColor: org.primaryColor,
+        // Stroke flips with the theme (white in dark mode, dark in light mode).
         boxShadow: active
-          ? "0 0 0 2px #ffffff, 0 4px 12px rgba(0,0,0,0.3)"
+          ? "0 0 0 2px var(--color-fg-base), 0 4px 12px rgba(0,0,0,0.3)"
           : "none",
       }}
     >

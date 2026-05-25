@@ -7,18 +7,39 @@
   --color-brand-red: #d83a3a;
   --color-brand-red-hover: #b82e2e;
 
-  /* Surface — dark warm-brown base derived from target screenshot. */
+  /* Default = dark theme tokens. Overridden below for light system pref. */
   --color-bg-base: #1a0e0d;
   --color-fg-base: #f5f1ee;
   --color-fg-muted: #9b8d88;
 
-  /* Smooth bg transition synced with carousel/phone rotation (600ms, same cubic-bezier). */
+  /* Smooth bg transition synced with carousel/phone rotation. */
   --transition-bg: background-color 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* The page-level background color is driven by JS (--org-bg). Falls back to bg-base. */
+/* Light-system override of the theme color variables. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-base: #fcf9f5;
+    --color-fg-base: #1a0e0d;
+    --color-fg-muted: #6b5d58;
+  }
+}
+
+/* Org-tinted background. Hero sets both `--org-bg-dark` (darken) and
+   `--org-bg-light` (lighten); CSS picks the appropriate one for the
+   user's system preference. Falls back to the theme base. */
+:root {
+  --org-bg: var(--org-bg-dark, var(--color-bg-base));
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --org-bg: var(--org-bg-light, var(--color-bg-base));
+  }
+}
+
 html,
 body {
-  background-color: var(--org-bg, var(--color-bg-base));
+  background-color: var(--org-bg);
+  color: var(--color-fg-base);
   transition: var(--transition-bg);
 }

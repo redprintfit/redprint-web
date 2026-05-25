@@ -50,7 +50,7 @@ export const orgs: Org[] = [
   },
 ];
 
-/** Darken a hex color by a percentage (0-100). Used for background tinting. */
+/** Darken a hex color by a percentage (0-100). Used for dark-mode bg tinting. */
 export function darken(hex: string, percent: number): string {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2), 16);
@@ -61,4 +61,18 @@ export function darken(hex: string, percent: number): string {
   const dg = Math.max(0, Math.round(g * factor));
   const db = Math.max(0, Math.round(b * factor));
   return `#${dr.toString(16).padStart(2, "0")}${dg.toString(16).padStart(2, "0")}${db.toString(16).padStart(2, "0")}`;
+}
+
+/** Lighten a hex color toward white by a percentage (0-100). Used for
+ *  light-mode bg tinting. */
+export function lighten(hex: string, percent: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const factor = percent / 100;
+  const lr = Math.min(255, Math.round(r + (255 - r) * factor));
+  const lg = Math.min(255, Math.round(g + (255 - g) * factor));
+  const lb = Math.min(255, Math.round(b + (255 - b) * factor));
+  return `#${lr.toString(16).padStart(2, "0")}${lg.toString(16).padStart(2, "0")}${lb.toString(16).padStart(2, "0")}`;
 }

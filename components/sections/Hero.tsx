@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
-import { orgs, darken, type Org } from "@/lib/content/orgs";
+import { orgs, darken, lighten, type Org } from "@/lib/content/orgs";
 import { PhoneFrame } from "@/components/phone/PhoneFrame";
 import { CommunityScreen } from "@/components/phone/screens/CommunityScreen";
 import { ExerciseProgressScreen } from "@/components/phone/screens/ExerciseProgressScreen";
@@ -60,12 +60,15 @@ export function Hero() {
   // Active org derived from org tick (5s).
   const activeOrg: Org = orgs[orgTick % orgs.length];
 
-  // Drive page bg from active org primary color (darkened 75%).
+  // Drive page bg from active org. Set both pre-computed tints so CSS can
+  // pick the right one based on the user's system color-scheme preference.
   useEffect(() => {
-    const tint = darken(activeOrg.primaryColor, 75);
-    document.documentElement.style.setProperty("--org-bg", tint);
+    const root = document.documentElement.style;
+    root.setProperty("--org-bg-dark", darken(activeOrg.primaryColor, 75));
+    root.setProperty("--org-bg-light", lighten(activeOrg.primaryColor, 80));
     return () => {
-      document.documentElement.style.removeProperty("--org-bg");
+      root.removeProperty("--org-bg-dark");
+      root.removeProperty("--org-bg-light");
     };
   }, [activeOrg]);
 
@@ -240,12 +243,12 @@ export function Hero() {
         {/* Right-side text column — pulled in from the right edge so it
             sits closer to the phone stack. */}
         <div className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[12vw]">
-          <div ref={markRef} className="text-white">
+          <div ref={markRef} className="text-fg-base">
             <RedprintMark className="h-9 w-9" />
           </div>
 
           <h1
-            className="text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-5xl lg:text-6xl"
+            className="text-fg-base text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
             style={{ fontWeight: 800 }}
           >
             <TypewriterText text={HEADLINE} start={typingStarted} />
@@ -258,7 +261,7 @@ export function Hero() {
           <div ref={ctasRef} className="mt-6 flex items-center gap-3">
             <a
               href="/for-gyms"
-              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+              className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition"
             >
               Redprint for gyms <span>›</span>
             </a>
