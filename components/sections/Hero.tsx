@@ -45,7 +45,11 @@ export function Hero() {
     if (!sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      // Initial states.
+      // Translation targets scale with viewport so the composition holds
+      // across breakpoints.
+      const vw = window.innerWidth;
+      const slide = Math.min(360, vw * 0.22);
+
       gsap.set(frontPhoneRef.current, { opacity: 0, y: 60, x: 0 });
       gsap.set([fanLeftRef.current, fanRightRef.current], {
         opacity: 0,
@@ -67,22 +71,22 @@ export function Hero() {
         },
       });
 
-      // 1. Front phone fades + rises into center
+      // 1. Front phone fades + rises into viewport center
       tl.to(frontPhoneRef.current, { opacity: 1, y: 0, duration: 1 });
 
       // 2. Brief hold
       tl.to({}, { duration: 0.4 });
 
       // 3. Front phone slides left + fan phones reveal + logo emerges
-      tl.to(frontPhoneRef.current, { x: -180, duration: 1 }, "shift");
+      tl.to(frontPhoneRef.current, { x: -slide, duration: 1 }, "shift");
       tl.to(
         fanLeftRef.current,
-        { opacity: 1, x: -90, rotate: -12, duration: 1 },
+        { opacity: 1, x: -slide - 70, rotate: -12, duration: 1 },
         "shift",
       );
       tl.to(
         fanRightRef.current,
-        { opacity: 1, x: -260, rotate: -24, duration: 1 },
+        { opacity: 1, x: -slide - 140, rotate: -24, duration: 1 },
         "shift",
       );
       tl.to(markRef.current, { opacity: 1, x: 0, duration: 0.8 }, "shift");
@@ -118,13 +122,9 @@ export function Hero() {
         }}
       />
 
-      <div
-        ref={stageRef}
-        className="relative z-10 mx-auto flex h-full max-w-7xl items-center px-6 md:px-12"
-      >
-        {/* Left: phone stack */}
-        <div className="relative flex h-full flex-1 items-center justify-center">
-          {/* Fan-out phones (rendered first so they sit behind in DOM) */}
+      <div ref={stageRef} className="relative z-10 h-full w-full">
+        {/* Phone stage: full-width absolute, phones centered to viewport. */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div ref={fanRightRef} className="absolute">
             <PhoneFrame className="w-[220px]">
               <AnalyticsScreen org={activeOrg} />
@@ -135,7 +135,6 @@ export function Hero() {
               <ExerciseProgressScreen org={activeOrg} />
             </PhoneFrame>
           </div>
-          {/* Front phone */}
           <div ref={frontPhoneRef} className="absolute">
             <PhoneFrame className="w-[260px]">
               <CommunityScreen org={activeOrg} />
@@ -143,8 +142,8 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Right: logo, headline, carousel, CTAs */}
-        <div className="flex flex-1 flex-col items-start gap-8">
+        {/* Right-side text column, positioned so it sits in the right half of the viewport. */}
+        <div className="absolute inset-y-0 right-0 flex w-full max-w-[640px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[5vw]">
           <div ref={markRef} className="text-white">
             <RedprintMark className="h-9 w-9" />
           </div>
