@@ -49,7 +49,13 @@ export function Hero() {
   const [phoneTick, setPhoneTick] = useState(0);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
-  const [slide, setSlide] = useState(220);
+  const [slide, setSlide] = useState(180);
+  // Mirror slide into a ref so the opening sequence can read the current
+  // value at play time without re-running its effect on resize.
+  const slideRef = useRef(slide);
+  useEffect(() => {
+    slideRef.current = slide;
+  }, [slide]);
 
   // Active org derived from org tick (5s).
   const activeOrg: Org = orgs[orgTick % orgs.length];
@@ -67,7 +73,7 @@ export function Hero() {
   // closer to viewport center (closer to the right-side text).
   useEffect(() => {
     const computeSlide = () =>
-      setSlide(Math.min(260, window.innerWidth * 0.16));
+      setSlide(Math.min(200, window.innerWidth * 0.12));
     computeSlide();
     window.addEventListener("resize", computeSlide);
     return () => window.removeEventListener("resize", computeSlide);
@@ -94,7 +100,9 @@ export function Hero() {
       if (played) return;
       played = true;
 
-      const targets = slotTransforms(slide);
+      // Read latest slide value at play-time (not effect-time) so the
+      // opening doesn't have to depend on `slide` and re-run on resize.
+      const targets = slotTransforms(slideRef.current);
       const tl = gsap.timeline({
         onComplete: () => setOpeningDone(true),
       });
@@ -160,7 +168,11 @@ export function Hero() {
     observer.observe(sectionRef.current);
 
     return () => observer.disconnect();
-  }, [slide]);
+    // Intentionally empty deps: opening should run exactly once on mount.
+    // Resize-driven slide updates flow through Framer's animate prop, not
+    // through replaying the opening sequence.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Independent ticks — both start after opening completes.
   useEffect(() => {
@@ -225,8 +237,9 @@ export function Hero() {
           })}
         </div>
 
-        {/* Right-side text column */}
-        <div className="absolute inset-y-0 right-0 flex w-full max-w-[640px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[5vw]">
+        {/* Right-side text column — pulled in from the right edge so it
+            sits closer to the phone stack. */}
+        <div className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[12vw]">
           <div ref={markRef} className="text-white">
             <RedprintMark className="h-9 w-9" />
           </div>
