@@ -235,13 +235,13 @@ export function Hero() {
 
         {/* Right-side text column — anchored to the bounded container's
             right edge so the gap to the phone stack stays constant. */}
-        <div className="absolute inset-y-0 right-6 flex w-[540px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
+        <div className="absolute inset-y-0 right-6 flex w-[580px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
           <div ref={markRef} className="text-fg-base">
             <RedprintMark className="h-9 w-9" />
           </div>
 
           <h1
-            className="text-fg-base text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
+            className="text-fg-base text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-[4.25rem]"
             style={{ fontWeight: 800 }}
           >
             <TypewriterText text={HEADLINE} start={typingStarted} />
