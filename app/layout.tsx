@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   description: "Fitness AI that knows your gym.",
 };
 
+// Runs before any markup paints — sets data-theme from localStorage so
+// the page renders with the user's last manual choice (avoids a flash).
+const noFlashScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />
+      </head>
       <body className="bg-bg-base text-fg-base flex min-h-full flex-col font-sans">
         <LenisProvider>
           <Nav />

@@ -25,9 +25,23 @@
   }
 }
 
+/* Manual overrides — written by the theme toggle (and the pre-hydration
+   script in layout.tsx). These come after the media query so they win
+   whenever set, regardless of system preference. */
+:root[data-theme="dark"] {
+  --color-bg-base: #1a0e0d;
+  --color-fg-base: #f5f1ee;
+  --color-fg-muted: #9b8d88;
+}
+:root[data-theme="light"] {
+  --color-bg-base: #fcf9f5;
+  --color-fg-base: #1a0e0d;
+  --color-fg-muted: #6b5d58;
+}
+
 /* Org-tinted background. Hero sets both `--org-bg-dark` (darken) and
    `--org-bg-light` (lighten); CSS picks the appropriate one for the
-   user's system preference. Falls back to the theme base. */
+   user's system preference (or the manual override). Falls back to base. */
 :root {
   --org-bg: var(--org-bg-dark, var(--color-bg-base));
 }
@@ -35,6 +49,12 @@
   :root {
     --org-bg: var(--org-bg-light, var(--color-bg-base));
   }
+}
+:root[data-theme="dark"] {
+  --org-bg: var(--org-bg-dark, var(--color-bg-base));
+}
+:root[data-theme="light"] {
+  --org-bg: var(--org-bg-light, var(--color-bg-base));
 }
 
 html,
