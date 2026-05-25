@@ -190,12 +190,11 @@ export function Hero() {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-[var(--paper-opacity)]"
         style={{
           backgroundImage: "url(/textures/paper.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: "var(--paper-opacity)",
         }}
       />
 
