@@ -21,7 +21,7 @@
    For production, re-enable the @media (prefers-color-scheme) block and
    make the pre-script defer to it when localStorage is empty. */
 :root {
-  --paper-opacity: 0.03;
+  --paper-opacity: 0.04;
 }
 :root[data-theme="light"] {
   --color-bg-base: #fcf9f5;
