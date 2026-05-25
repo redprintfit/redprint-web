@@ -48,6 +48,13 @@ export const orgs: Org[] = [
     primaryColor: "#F66733",
     logoSrc: "/logos/clemson.svg",
   },
+  {
+    id: "kelty-hearts",
+    name: "Kelty Hearts",
+    shortName: "KH",
+    primaryColor: "#7B1E3A",
+    logoSrc: "/logos/kelty-hearts.svg",
+  },
 ];
 
 /** Darken a hex color by a percentage (0-100). Used for dark-mode bg tinting. */
