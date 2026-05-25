@@ -13,7 +13,8 @@ import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 
 const HEADLINE = "Fitness AI that knows your gym";
-const TICK_MS = 10000;
+const TICK_ORG_MS = 5000;
+const TICK_PHONE_MS = 10000;
 
 /** Single duration + easing reused across bg, carousel, phone slot transitions. */
 const ROTATION_DURATION = 0.6;
@@ -44,13 +45,14 @@ export function Hero() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const ctasRef = useRef<HTMLDivElement>(null);
 
-  const [tick, setTick] = useState(0);
+  const [orgTick, setOrgTick] = useState(0);
+  const [phoneTick, setPhoneTick] = useState(0);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
-  const [slide, setSlide] = useState(280);
+  const [slide, setSlide] = useState(220);
 
-  // Active org derived from tick.
-  const activeOrg: Org = orgs[tick % orgs.length];
+  // Active org derived from org tick (5s).
+  const activeOrg: Org = orgs[orgTick % orgs.length];
 
   // Drive page bg from active org primary color (darkened 75%).
   useEffect(() => {
@@ -61,11 +63,11 @@ export function Hero() {
     };
   }, [activeOrg]);
 
-  // Compute slide distance based on viewport. Larger value = phones sit
-  // further to the left of viewport center.
+  // Compute slide distance based on viewport. Smaller value = phones sit
+  // closer to viewport center (closer to the right-side text).
   useEffect(() => {
     const computeSlide = () =>
-      setSlide(Math.min(440, window.innerWidth * 0.28));
+      setSlide(Math.min(260, window.innerWidth * 0.16));
     computeSlide();
     window.addEventListener("resize", computeSlide);
     return () => window.removeEventListener("resize", computeSlide);
@@ -160,18 +162,22 @@ export function Hero() {
     return () => observer.disconnect();
   }, [slide]);
 
-  // 5s tick — starts after opening completes. Drives both carousel + phone rotation.
+  // Independent ticks — both start after opening completes.
   useEffect(() => {
     if (!openingDone) return;
-    const id = setInterval(() => setTick((t) => t + 1), TICK_MS);
-    return () => clearInterval(id);
+    const o = setInterval(() => setOrgTick((t) => t + 1), TICK_ORG_MS);
+    const p = setInterval(() => setPhoneTick((t) => t + 1), TICK_PHONE_MS);
+    return () => {
+      clearInterval(o);
+      clearInterval(p);
+    };
   }, [openingDone]);
 
   const targets = slotTransforms(slide);
 
-  // Each phone's slot = (screenIndex - tick + 3) % 3
+  // Each phone's slot = (screenIndex - phoneTick) mod 3
   const slotForScreen = (screenIndex: number) =>
-    ((screenIndex - tick) % SCREENS.length + SCREENS.length) % SCREENS.length;
+    ((screenIndex - phoneTick) % SCREENS.length + SCREENS.length) % SCREENS.length;
 
   return (
     <section
@@ -233,10 +239,7 @@ export function Hero() {
           </h1>
 
           <div ref={carouselRef}>
-            <OrgCarousel
-              orgs={orgs}
-              activeIndex={tick % orgs.length}
-            />
+            <OrgCarousel orgs={orgs} activeIndex={orgTick % orgs.length} />
           </div>
 
           <div ref={ctasRef} className="mt-6 flex items-center gap-3">

@@ -55,7 +55,9 @@ export function OrgCarousel({
 
   return (
     <div className="flex items-center gap-3">
-      <AnimatePresence initial={false}>
+      {/* popLayout = exiting org is removed from flex flow immediately so
+          the remaining orgs can slide left in sync with the exit + colors. */}
+      <AnimatePresence initial={false} mode="popLayout">
         {visible.map((org, pos) => {
           const opacity = pos === 0 ? 1 : Math.max(0.25, 1 - pos * 0.25);
           const scaleX = pos === 0 ? 1 : Math.max(0.5, 1 - pos * 0.15);
