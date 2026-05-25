@@ -61,25 +61,32 @@ export function OrgCarousel({
         {visible.map((org, pos) => {
           // Opacity falls off faster for on-deck items.
           const opacity =
-            pos === 0 ? 1 : [null, 0.5, 0.3, 0.18][pos] ?? 0.15;
+            pos === 0 ? 1 : ([null, 0.5, 0.3, 0.18][pos] ?? 0.15);
           const scaleX = pos === 0 ? 1 : Math.max(0.5, 1 - pos * 0.15);
           const scaleY = pos === 0 ? 1 : Math.max(0.8, 1 - pos * 0.06);
           // Spacing shrinks the further from the active item.
           // pos 0 has no left gap; later positions get progressively tighter.
-          const gap = pos === 0 ? 0 : [null, 18, 10, 6][pos] ?? 4;
+          const gap = pos === 0 ? 0 : ([null, 18, 10, 6][pos] ?? 4);
 
           return (
             <motion.div
               key={org.id}
               layout
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity, scaleX, scaleY, marginLeft: gap }}
+              // Entering items start far to the right at the back-of-rotation
+              // size, then slide leftward in sync with the other items shifting.
+              initial={{ opacity: 0, x: 90, scaleX: 0.5, scaleY: 0.8 }}
+              animate={{ opacity, scaleX, scaleY }}
               exit={{ opacity: 0, x: -30 }}
               transition={{
                 duration: 0.6,
                 ease: [0.22, 1, 0.36, 1],
                 layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
               }}
+              // marginLeft as static style (not animated) so framer's layout
+              // animation handles the position shift cleanly. Animating
+              // marginLeft alongside layout was leaving the active item
+              // visually indented from the column's leading edge.
+              style={{ marginLeft: gap }}
               className="relative h-12 w-12 origin-center md:h-14 md:w-14"
             >
               <OrgLogoPlaceholder org={org} active={pos === 0} />
