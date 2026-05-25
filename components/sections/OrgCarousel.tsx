@@ -8,39 +8,44 @@ type Props = {
   orgs: Org[];
   /** How many orgs are visible at once (default 4). */
   visibleCount?: number;
-  /** Autoplay interval in ms (default 5000). */
+  /** Autoplay interval in ms. Ignored when `activeIndex` is provided. */
   intervalMs?: number;
+  /** If supplied, the carousel becomes controlled — no internal interval. */
+  activeIndex?: number;
   /** Fired when the active (highlighted) org changes. */
-  onActiveChange?: (org: Org) => void;
-  /** If true, pauses the autoplay. Useful before the carousel is in view. */
+  onActiveChange?: (org: Org, index: number) => void;
+  /** Pause autoplay (uncontrolled mode only). */
   paused?: boolean;
 };
 
 /**
  * Horizontal "wheel picker" carousel. Active item is leftmost and fully
  * opaque; subsequent items get progressively more transparent and
- * horizontally compressed. Every `intervalMs`, the active rotates to the
- * back of the queue.
+ * horizontally compressed. Autoplays in uncontrolled mode; in controlled
+ * mode, the parent supplies `activeIndex`.
  */
 export function OrgCarousel({
   orgs,
   visibleCount = 4,
   intervalMs = 5000,
+  activeIndex: controlledIndex,
   onActiveChange,
   paused = false,
 }: Props) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const controlled = controlledIndex !== undefined;
+  const [internalIndex, setInternalIndex] = useState(0);
+  const activeIndex = controlled ? controlledIndex : internalIndex;
 
   useEffect(() => {
-    if (paused) return;
+    if (controlled || paused) return;
     const t = setInterval(() => {
-      setActiveIndex((i) => (i + 1) % orgs.length);
+      setInternalIndex((i) => (i + 1) % orgs.length);
     }, intervalMs);
     return () => clearInterval(t);
-  }, [orgs.length, intervalMs, paused]);
+  }, [orgs.length, intervalMs, paused, controlled]);
 
   useEffect(() => {
-    onActiveChange?.(orgs[activeIndex]);
+    onActiveChange?.(orgs[activeIndex], activeIndex);
   }, [activeIndex, orgs, onActiveChange]);
 
   const visible = Array.from(

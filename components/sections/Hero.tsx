@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { orgs, darken, type Org } from "@/lib/content/orgs";
 import { PhoneFrame } from "@/components/phone/PhoneFrame";
 import { CommunityScreen } from "@/components/phone/screens/CommunityScreen";
@@ -12,24 +12,41 @@ import { OrgCarousel } from "@/components/sections/OrgCarousel";
 import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 
-gsap.registerPlugin(ScrollTrigger);
-
 const HEADLINE = "Fitness AI that knows your gym";
+const TICK_MS = 5000;
+
+const SCREENS = [
+  { id: "community", Component: CommunityScreen },
+  { id: "exercise", Component: ExerciseProgressScreen },
+  { id: "analytics", Component: AnalyticsScreen },
+] as const;
+
+/** Per-slot transforms (slot 0 = front, 1 = mid-fan, 2 = back-fan). */
+function slotTransforms(slide: number) {
+  return [
+    { x: -slide, rotate: 0 },
+    { x: -slide - 70, rotate: -12 },
+    { x: -slide - 140, rotate: -24 },
+  ];
+}
+const SLOT_Z = [30, 20, 10];
 
 export function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
   const frontPhoneRef = useRef<HTMLDivElement>(null);
   const fanLeftRef = useRef<HTMLDivElement>(null);
   const fanRightRef = useRef<HTMLDivElement>(null);
   const markRef = useRef<HTMLDivElement>(null);
-  const headlineRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const ctasRef = useRef<HTMLDivElement>(null);
 
-  const [activeOrg, setActiveOrg] = useState<Org>(orgs[0]);
+  const [tick, setTick] = useState(0);
   const [typingStarted, setTypingStarted] = useState(false);
-  const [carouselReady, setCarouselReady] = useState(false);
+  const [openingDone, setOpeningDone] = useState(false);
+  const [slide, setSlide] = useState(280);
+
+  // Active org derived from tick.
+  const activeOrg: Org = orgs[tick % orgs.length];
 
   // Drive page bg from active org primary color (darkened 75%).
   useEffect(() => {
@@ -40,79 +57,134 @@ export function Hero() {
     };
   }, [activeOrg]);
 
-  // Scroll-driven opening timeline.
+  // Compute slide distance based on viewport.
+  useEffect(() => {
+    const computeSlide = () =>
+      setSlide(Math.min(360, window.innerWidth * 0.22));
+    computeSlide();
+    window.addEventListener("resize", computeSlide);
+    return () => window.removeEventListener("resize", computeSlide);
+  }, []);
+
+  // Opening sequence: plays once when section enters viewport.
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    const ctx = gsap.context(() => {
-      // Translation targets scale with viewport so the composition holds
-      // across breakpoints.
-      const vw = window.innerWidth;
-      const slide = Math.min(360, vw * 0.22);
+    let played = false;
+    const phoneRefs = [
+      frontPhoneRef.current,
+      fanLeftRef.current,
+      fanRightRef.current,
+    ];
 
-      gsap.set(frontPhoneRef.current, { opacity: 0, y: 60, x: 0 });
-      gsap.set([fanLeftRef.current, fanRightRef.current], {
-        opacity: 0,
-        x: 0,
-        rotate: 0,
-      });
-      gsap.set(markRef.current, { opacity: 0, x: -40 });
-      gsap.set(carouselRef.current, { opacity: 0, y: 30 });
-      gsap.set(ctasRef.current, { opacity: 0, y: 20 });
+    // Initial state — all phones invisible at viewport center.
+    gsap.set(phoneRefs, { opacity: 0, y: 60, x: 0, rotate: 0 });
+    gsap.set(markRef.current, { opacity: 0, x: -40 });
+    gsap.set(carouselRef.current, { opacity: 0, y: 30 });
+    gsap.set(ctasRef.current, { opacity: 0, y: 20 });
 
+    const play = () => {
+      if (played) return;
+      played = true;
+
+      const targets = slotTransforms(slide);
       const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "+=2400",
-          scrub: 0.8,
-          pin: true,
-          anticipatePin: 1,
-        },
+        onComplete: () => setOpeningDone(true),
       });
 
-      // 1. Front phone fades + rises into viewport center
-      tl.to(frontPhoneRef.current, { opacity: 1, y: 0, duration: 1 });
+      // 1. Front phone fades in + rises into center
+      tl.to(frontPhoneRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        ease: "power2.out",
+      });
 
-      // 2. Brief hold
+      // 2. Hold
       tl.to({}, { duration: 0.4 });
 
-      // 3. Front phone slides left + fan phones reveal + logo emerges
-      tl.to(frontPhoneRef.current, { x: -slide, duration: 1 }, "shift");
+      // 3. Phones move to their slot positions in parallel.
+      //    Front slides slightly left; fan phones rotate out from behind.
+      tl.to(
+        frontPhoneRef.current,
+        { x: targets[0].x, duration: 1, ease: "power3.out" },
+        "shift",
+      );
       tl.to(
         fanLeftRef.current,
-        { opacity: 1, x: -slide - 70, rotate: -12, duration: 1 },
+        {
+          opacity: 1,
+          x: targets[1].x,
+          rotate: targets[1].rotate,
+          duration: 1,
+          ease: "power3.out",
+        },
         "shift",
       );
       tl.to(
         fanRightRef.current,
-        { opacity: 1, x: -slide - 140, rotate: -24, duration: 1 },
+        {
+          opacity: 1,
+          x: targets[2].x,
+          rotate: targets[2].rotate,
+          duration: 1,
+          ease: "power3.out",
+        },
         "shift",
       );
-      tl.to(markRef.current, { opacity: 1, x: 0, duration: 0.8 }, "shift");
 
-      // 4. Trigger headline typing partway through the shift
+      // 4. Logo slides in from behind
+      tl.to(
+        markRef.current,
+        { opacity: 1, x: 0, duration: 0.7, ease: "power2.out" },
+        "shift",
+      );
+
+      // 5. Typing kicks in partway through the shift
       tl.call(() => setTypingStarted(true), [], "shift+=0.3");
-      // Reverse path: if user scrolls back, reset.
-      tl.eventCallback("onReverseComplete", () => setTypingStarted(false));
 
-      // 5. Carousel rises in (after typing has had a beat to begin)
-      tl.to(carouselRef.current, { opacity: 1, y: 0, duration: 0.8 }, "+=0.3");
-      tl.call(() => setCarouselReady(true), [], ">");
+      // 6. Carousel + CTAs settle in
+      tl.to(
+        carouselRef.current,
+        { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
+        "+=0.4",
+      );
+      tl.to(
+        ctasRef.current,
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        "<",
+      );
+    };
 
-      // 6. CTAs settle in
-      tl.to(ctasRef.current, { opacity: 1, y: 0, duration: 0.6 }, "<");
-    }, sectionRef);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) play();
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(sectionRef.current);
 
-    return () => ctx.revert();
-  }, []);
+    return () => observer.disconnect();
+  }, [slide]);
+
+  // 5s tick — starts after opening completes. Drives both carousel + phone rotation.
+  useEffect(() => {
+    if (!openingDone) return;
+    const id = setInterval(() => setTick((t) => t + 1), TICK_MS);
+    return () => clearInterval(id);
+  }, [openingDone]);
+
+  const targets = slotTransforms(slide);
+
+  // Each phone's slot = (screenIndex - tick + 3) % 3
+  const slotForScreen = (screenIndex: number) =>
+    ((screenIndex - tick) % SCREENS.length + SCREENS.length) % SCREENS.length;
 
   return (
     <section
       ref={sectionRef}
       className="relative h-screen w-full overflow-hidden"
     >
-      {/* Optional noise texture overlay — drop /public/textures/noise.png */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
@@ -122,34 +194,45 @@ export function Hero() {
         }}
       />
 
-      <div ref={stageRef} className="relative z-10 h-full w-full">
+      <div className="relative z-10 h-full w-full">
         {/* Phone stage: full-width absolute, phones centered to viewport. */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div ref={fanRightRef} className="absolute">
-            <PhoneFrame className="w-[220px]">
-              <AnalyticsScreen org={activeOrg} />
-            </PhoneFrame>
-          </div>
-          <div ref={fanLeftRef} className="absolute">
-            <PhoneFrame className="w-[230px]">
-              <ExerciseProgressScreen org={activeOrg} />
-            </PhoneFrame>
-          </div>
-          <div ref={frontPhoneRef} className="absolute">
-            <PhoneFrame className="w-[260px]">
-              <CommunityScreen org={activeOrg} />
-            </PhoneFrame>
-          </div>
+          {SCREENS.map(({ id, Component }, i) => {
+            const slot = slotForScreen(i);
+            const ref =
+              slot === 0
+                ? frontPhoneRef
+                : slot === 1
+                  ? fanLeftRef
+                  : fanRightRef;
+            // We assign refs by SLOT, not by phone — so GSAP's opening
+            // sequence (which targets refs) always hits the right phone.
+            // After openingDone, Framer drives transforms per-phone-id.
+            return (
+              <motion.div
+                key={id}
+                ref={openingDone ? undefined : ref}
+                className="absolute"
+                initial={false}
+                animate={openingDone ? targets[slot] : undefined}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                style={{ zIndex: SLOT_Z[slot] }}
+              >
+                <PhoneFrame className={slot === 0 ? "w-[260px]" : "w-[230px]"}>
+                  <Component org={activeOrg} />
+                </PhoneFrame>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Right-side text column, positioned so it sits in the right half of the viewport. */}
+        {/* Right-side text column */}
         <div className="absolute inset-y-0 right-0 flex w-full max-w-[640px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[5vw]">
           <div ref={markRef} className="text-white">
             <RedprintMark className="h-9 w-9" />
           </div>
 
           <h1
-            ref={headlineRef}
             className="text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl"
             style={{ fontWeight: 800 }}
           >
@@ -159,8 +242,7 @@ export function Hero() {
           <div ref={carouselRef}>
             <OrgCarousel
               orgs={orgs}
-              onActiveChange={setActiveOrg}
-              paused={!carouselReady}
+              activeIndex={tick % orgs.length}
             />
           </div>
 
