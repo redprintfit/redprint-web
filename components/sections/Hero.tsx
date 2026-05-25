@@ -13,7 +13,11 @@ import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 
 const HEADLINE = "Fitness AI that knows your gym";
-const TICK_MS = 5000;
+const TICK_MS = 10000;
+
+/** Single duration + easing reused across bg, carousel, phone slot transitions. */
+const ROTATION_DURATION = 0.6;
+const ROTATION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const SCREENS = [
   { id: "community", Component: CommunityScreen },
@@ -21,12 +25,12 @@ const SCREENS = [
   { id: "analytics", Component: AnalyticsScreen },
 ] as const;
 
-/** Per-slot transforms (slot 0 = front, 1 = mid-fan, 2 = back-fan). */
+/** Per-slot transforms (slot 0 = front 100%, 1 = mid-fan 90%, 2 = back-fan 80%). */
 function slotTransforms(slide: number) {
   return [
-    { x: -slide, rotate: 0 },
-    { x: -slide - 70, rotate: -12 },
-    { x: -slide - 140, rotate: -24 },
+    { x: -slide, rotate: 0, scale: 1 },
+    { x: -slide - 60, rotate: -12, scale: 0.9 },
+    { x: -slide - 115, rotate: -24, scale: 0.8 },
   ];
 }
 const SLOT_Z = [30, 20, 10];
@@ -57,10 +61,11 @@ export function Hero() {
     };
   }, [activeOrg]);
 
-  // Compute slide distance based on viewport.
+  // Compute slide distance based on viewport. Larger value = phones sit
+  // further to the left of viewport center.
   useEffect(() => {
     const computeSlide = () =>
-      setSlide(Math.min(360, window.innerWidth * 0.22));
+      setSlide(Math.min(440, window.innerWidth * 0.28));
     computeSlide();
     window.addEventListener("resize", computeSlide);
     return () => window.removeEventListener("resize", computeSlide);
@@ -77,8 +82,8 @@ export function Hero() {
       fanRightRef.current,
     ];
 
-    // Initial state — all phones invisible at viewport center.
-    gsap.set(phoneRefs, { opacity: 0, y: 60, x: 0, rotate: 0 });
+    // Initial state — all phones invisible at viewport center, full scale.
+    gsap.set(phoneRefs, { opacity: 0, y: 60, x: 0, rotate: 0, scale: 1 });
     gsap.set(markRef.current, { opacity: 0, x: -40 });
     gsap.set(carouselRef.current, { opacity: 0, y: 30 });
     gsap.set(ctasRef.current, { opacity: 0, y: 20 });
@@ -104,32 +109,20 @@ export function Hero() {
       tl.to({}, { duration: 0.4 });
 
       // 3. Phones move to their slot positions in parallel.
-      //    Front slides slightly left; fan phones rotate out from behind.
+      //    Front slides slightly left; fan phones rotate + scale down from behind.
       tl.to(
         frontPhoneRef.current,
-        { x: targets[0].x, duration: 1, ease: "power3.out" },
+        { ...targets[0], duration: 1, ease: "power3.out" },
         "shift",
       );
       tl.to(
         fanLeftRef.current,
-        {
-          opacity: 1,
-          x: targets[1].x,
-          rotate: targets[1].rotate,
-          duration: 1,
-          ease: "power3.out",
-        },
+        { opacity: 1, ...targets[1], duration: 1, ease: "power3.out" },
         "shift",
       );
       tl.to(
         fanRightRef.current,
-        {
-          opacity: 1,
-          x: targets[2].x,
-          rotate: targets[2].rotate,
-          duration: 1,
-          ease: "power3.out",
-        },
+        { opacity: 1, ...targets[2], duration: 1, ease: "power3.out" },
         "shift",
       );
 
@@ -215,10 +208,10 @@ export function Hero() {
                 className="absolute"
                 initial={false}
                 animate={openingDone ? targets[slot] : undefined}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: ROTATION_DURATION, ease: ROTATION_EASE }}
                 style={{ zIndex: SLOT_Z[slot] }}
               >
-                <PhoneFrame className={slot === 0 ? "w-[260px]" : "w-[230px]"}>
+                <PhoneFrame className="w-[260px]">
                   <Component org={activeOrg} />
                 </PhoneFrame>
               </motion.div>

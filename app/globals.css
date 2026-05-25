@@ -12,8 +12,8 @@
   --color-fg-base: #f5f1ee;
   --color-fg-muted: #9b8d88;
 
-  /* Smooth bg transition when active org changes. */
-  --transition-bg: background-color 800ms ease;
+  /* Smooth bg transition synced with carousel/phone rotation (600ms, same cubic-bezier). */
+  --transition-bg: background-color 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The page-level background color is driven by JS (--org-bg). Falls back to bg-base. */
