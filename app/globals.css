@@ -20,10 +20,14 @@
    data-theme on <html> so this is the single source of truth.
    For production, re-enable the @media (prefers-color-scheme) block and
    make the pre-script defer to it when localStorage is empty. */
+:root {
+  --paper-opacity: 0.03;
+}
 :root[data-theme="light"] {
   --color-bg-base: #fcf9f5;
   --color-fg-base: #1a0e0d;
   --color-fg-muted: #6b5d58;
+  --paper-opacity: 0.1;
 }
 
 /* Org-tinted background. Hero sets `--org-bg-dark` (darken) and
