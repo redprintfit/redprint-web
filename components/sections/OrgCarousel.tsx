@@ -54,21 +54,26 @@ export function OrgCarousel({
   );
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center">
       {/* popLayout = exiting org is removed from flex flow immediately so
           the remaining orgs can slide left in sync with the exit + colors. */}
       <AnimatePresence initial={false} mode="popLayout">
         {visible.map((org, pos) => {
-          const opacity = pos === 0 ? 1 : Math.max(0.25, 1 - pos * 0.25);
+          // Opacity falls off faster for on-deck items.
+          const opacity =
+            pos === 0 ? 1 : [null, 0.5, 0.3, 0.18][pos] ?? 0.15;
           const scaleX = pos === 0 ? 1 : Math.max(0.5, 1 - pos * 0.15);
           const scaleY = pos === 0 ? 1 : Math.max(0.8, 1 - pos * 0.06);
+          // Spacing shrinks the further from the active item.
+          // pos 0 has no left gap; later positions get progressively tighter.
+          const gap = pos === 0 ? 0 : [null, 18, 10, 6][pos] ?? 4;
 
           return (
             <motion.div
               key={org.id}
               layout
               initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity, scaleX, scaleY }}
+              animate={{ opacity, scaleX, scaleY, marginLeft: gap }}
               exit={{ opacity: 0, x: -30 }}
               transition={{
                 duration: 0.6,
@@ -96,7 +101,9 @@ function OrgLogoPlaceholder({ org, active }: { org: Org; active: boolean }) {
       className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
       style={{
         backgroundColor: org.primaryColor,
-        boxShadow: active ? `0 0 0 2px rgba(255,255,255,0.25)` : "none",
+        boxShadow: active
+          ? "0 0 0 2px #ffffff, 0 4px 12px rgba(0,0,0,0.3)"
+          : "none",
       }}
     >
       {org.shortName}
