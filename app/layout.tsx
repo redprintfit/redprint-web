@@ -17,9 +17,10 @@ export const metadata: Metadata = {
   description: "Fitness AI that knows your gym.",
 };
 
-// Runs before any markup paints — sets data-theme from localStorage so
-// the page renders with the user's last manual choice (avoids a flash).
-const noFlashScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+// Runs before any markup paints — always sets a data-theme attribute on
+// <html>. Reads localStorage; defaults to "dark" if absent. For production,
+// switch the default to system preference (matchMedia prefers-color-scheme).
+const noFlashScript = `(function(){var t='dark';try{var s=localStorage.getItem('theme');if(s==='light'||s==='dark')t=s;}catch(e){}document.documentElement.setAttribute('data-theme',t);})();`;
 
 export default function RootLayout({
   children,

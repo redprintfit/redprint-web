@@ -7,7 +7,7 @@
   --color-brand-red: #d83a3a;
   --color-brand-red-hover: #b82e2e;
 
-  /* Default = dark theme tokens. Overridden below for light system pref. */
+  /* Default = dark theme tokens. Overridden by [data-theme="light"]. */
   --color-bg-base: #1a0e0d;
   --color-fg-base: #f5f1ee;
   --color-fg-muted: #9b8d88;
@@ -16,41 +16,19 @@
   --transition-bg: background-color 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Light-system override of the theme color variables. */
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg-base: #fcf9f5;
-    --color-fg-base: #1a0e0d;
-    --color-fg-muted: #6b5d58;
-  }
-}
-
-/* Manual overrides — written by the theme toggle (and the pre-hydration
-   script in layout.tsx). These come after the media query so they win
-   whenever set, regardless of system preference. */
-:root[data-theme="dark"] {
-  --color-bg-base: #1a0e0d;
-  --color-fg-base: #f5f1ee;
-  --color-fg-muted: #9b8d88;
-}
+/* Theme override. The pre-hydration script in app/layout.tsx always sets
+   data-theme on <html> so this is the single source of truth.
+   For production, re-enable the @media (prefers-color-scheme) block and
+   make the pre-script defer to it when localStorage is empty. */
 :root[data-theme="light"] {
   --color-bg-base: #fcf9f5;
   --color-fg-base: #1a0e0d;
   --color-fg-muted: #6b5d58;
 }
 
-/* Org-tinted background. Hero sets both `--org-bg-dark` (darken) and
-   `--org-bg-light` (lighten); CSS picks the appropriate one for the
-   user's system preference (or the manual override). Falls back to base. */
+/* Org-tinted background. Hero sets `--org-bg-dark` (darken) and
+   `--org-bg-light` (lighten) every tick; CSS picks per data-theme. */
 :root {
-  --org-bg: var(--org-bg-dark, var(--color-bg-base));
-}
-@media (prefers-color-scheme: light) {
-  :root {
-    --org-bg: var(--org-bg-light, var(--color-bg-base));
-  }
-}
-:root[data-theme="dark"] {
   --org-bg: var(--org-bg-dark, var(--color-bg-base));
 }
 :root[data-theme="light"] {

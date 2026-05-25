@@ -6,31 +6,22 @@ import { Moon, Sun } from "lucide-react";
 type Theme = "light" | "dark";
 
 /**
- * Two-state dark/light toggle that overrides the system color-scheme
- * preference. Persists choice in localStorage. The pre-hydration script
- * in app/layout.tsx applies the saved value before first paint to avoid
- * a flash; this component then takes over for runtime toggling.
+ * Two-state dark/light toggle. The pre-hydration script in
+ * app/layout.tsx always sets a data-theme attribute on <html> before
+ * paint; this component just reads it on mount and flips on click.
  */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-      return;
-    }
-    setTheme(
-      window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light"
-        : "dark",
-    );
+    const current = document.documentElement.getAttribute("data-theme");
+    setTheme(current === "light" ? "light" : "dark");
   }, []);
 
   const toggle = () => {
     const next: Theme = theme === "light" ? "dark" : "light";
-    setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
+    setTheme(next);
     try {
       localStorage.setItem("theme", next);
     } catch {
@@ -38,8 +29,8 @@ export function ThemeToggle() {
     }
   };
 
+  // Render a same-sized placeholder until mounted to avoid layout shift.
   if (theme === null) {
-    // Avoid hydration mismatch — render an empty placeholder of the same size.
     return <div aria-hidden className="h-9 w-9" />;
   }
 
@@ -48,7 +39,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-      className="text-fg-base hover:bg-fg-base/10 flex h-9 w-9 items-center justify-center rounded-full transition"
+      className="text-fg-base border-fg-base/20 hover:bg-fg-base/10 flex h-9 w-9 items-center justify-center rounded-full border transition"
     >
       {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
     </button>
