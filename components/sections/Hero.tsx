@@ -49,13 +49,12 @@ export function Hero() {
   const [phoneTick, setPhoneTick] = useState(0);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
-  const [slide, setSlide] = useState(180);
-  // Mirror slide into a ref so the opening sequence can read the current
-  // value at play time without re-running its effect on resize.
+  // Front phone x-shift from the bounded container's center. Composition
+  // sits inside max-w-7xl so this is a fixed pixel value, not viewport-
+  // relative — the gap between phones and text stays constant on wide
+  // displays instead of drifting apart.
+  const slide = 220;
   const slideRef = useRef(slide);
-  useEffect(() => {
-    slideRef.current = slide;
-  }, [slide]);
 
   // Active org derived from org tick (5s).
   const activeOrg: Org = orgs[orgTick % orgs.length];
@@ -71,16 +70,6 @@ export function Hero() {
       root.removeProperty("--org-bg-light");
     };
   }, [activeOrg]);
-
-  // Compute slide distance based on viewport. Smaller value = phones sit
-  // closer to viewport center (closer to the right-side text).
-  useEffect(() => {
-    const computeSlide = () =>
-      setSlide(Math.min(200, window.innerWidth * 0.12));
-    computeSlide();
-    window.addEventListener("resize", computeSlide);
-    return () => window.removeEventListener("resize", computeSlide);
-  }, []);
 
   // Opening sequence: plays once when section enters viewport.
   useEffect(() => {
@@ -208,8 +197,12 @@ export function Hero() {
         }}
       />
 
-      <div className="relative z-10 h-full w-full">
-        {/* Phone stage: full-width absolute, phones centered to viewport. */}
+      {/* Inner bounded container — caps the composition width so phones
+          and text don't drift apart on wide viewports. The container
+          (and everything inside) stays centered via mx-auto. */}
+      <div className="relative z-10 mx-auto h-full max-w-7xl">
+        {/* Phone stage: absolute inside the container; phones flex-center
+            on the container, which sits at viewport center on wide screens. */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           {SCREENS.map(({ id, Component }, i) => {
             const slot = slotForScreen(i);
@@ -240,9 +233,9 @@ export function Hero() {
           })}
         </div>
 
-        {/* Right-side text column — pulled in from the right edge so it
-            sits closer to the phone stack. */}
-        <div className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col items-start justify-center gap-8 px-6 md:px-12 lg:right-[12vw]">
+        {/* Right-side text column — anchored to the bounded container's
+            right edge so the gap to the phone stack stays constant. */}
+        <div className="absolute inset-y-0 right-6 flex w-[540px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
           <div ref={markRef} className="text-fg-base">
             <RedprintMark className="h-9 w-9" />
           </div>
