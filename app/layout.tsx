@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
+import { LenisProvider } from "@/components/animations/LenisProvider";
+
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Redprint",
-  description: "Redprint — placeholder description.",
+  description: "Fitness AI that knows your gym.",
 };
 
 export default function RootLayout({
@@ -14,11 +23,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">
-        <Nav />
-        <main className="flex-1">{children}</main>
-        <Footer />
+    <html lang="en" className={`${outfit.variable} h-full antialiased`}>
+      <body className="bg-bg-base text-fg-base flex min-h-full flex-col font-sans">
+        <LenisProvider>
+          <Nav />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </LenisProvider>
       </body>
     </html>
   );

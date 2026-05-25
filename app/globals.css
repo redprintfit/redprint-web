@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* Design tokens will be defined in phase 2. */
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand — PLACEHOLDER red, replace with exact hex from design. */
+  --color-brand-red: #d83a3a;
+  --color-brand-red-hover: #b82e2e;
+
+  /* Surface — dark warm-brown base derived from target screenshot. */
+  --color-bg-base: #1a0e0d;
+  --color-fg-base: #f5f1ee;
+  --color-fg-muted: #9b8d88;
+
+  /* Smooth bg transition when active org changes. */
+  --transition-bg: background-color 800ms ease;
+}
+
+/* The page-level background color is driven by JS (--org-bg). Falls back to bg-base. */
+html,
+body {
+  background-color: var(--org-bg, var(--color-bg-base));
+  transition: var(--transition-bg);
 }
