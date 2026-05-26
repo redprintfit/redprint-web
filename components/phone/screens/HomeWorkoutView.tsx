@@ -134,7 +134,7 @@ export function HomeWorkoutView({ org }: { org: Org }) {
         <ExerciseCard org={org} orgDark65={orgDark65} isDark={isDark} />
 
         {/* Collapsed exercise rows — same bg as the expanded card */}
-        <div className="mt-3 space-y-1.5">
+        <div className="mt-1.5 space-y-1.5">
           <CollapsedExercise
             name="Barbell Incline Bench Press"
             sets={4}
