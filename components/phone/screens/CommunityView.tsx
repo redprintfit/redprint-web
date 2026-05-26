@@ -475,52 +475,81 @@ function WorkoutPostCard({
 
 function TabBar({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
-  // iOS CustomTabBar uses a single shape `BarWithBump` filled with the
-  // full orgColor, with a circular cutout at the top center where the
-  // NFC scan button bumps up. Text is always white (the tab bar doesn't
-  // flip with system theme in the iOS app).
+
+  // Scaled from iOS BarWithBump (barHeight 110, bumpRadius 160,
+  // bumpCenterBelowTop 137 → halfW≈82.7, peakY≈-23).
+  // Scale ≈ 0.45 to fit our 260×48 bar.
+  const W = 260;
+  const H = 48;
+  const peakY = -10; // peak above bar top
+  const halfW = 40; // half-width where the bump arc meets the bar top
+  const cx = W / 2;
+  const ctrl = halfW * 0.45;
+
+  // S-curve path (matches iOS BarWithBump exactly, scaled).
+  const path = `
+    M 0 0
+    L ${cx - halfW} 0
+    C ${cx - halfW + ctrl} 0, ${cx - ctrl} ${peakY}, ${cx} ${peakY}
+    C ${cx + ctrl} ${peakY}, ${cx + halfW - ctrl} 0, ${cx + halfW} 0
+    L ${W} 0
+    L ${W} ${H}
+    L 0 ${H}
+    Z
+  `;
+
   return (
-    <nav className="relative" style={{ height: 42 }}>
-      {/* Bar + bump shape — SVG path for the cutout. */}
+    <nav
+      className="relative"
+      style={{ height: H, marginTop: -peakY * -1 - 10 /* allow peak to extend up */ }}
+    >
+      {/* Bar + bump shape — single filled path, full orgColor. */}
       <svg
-        viewBox="0 0 260 42"
+        viewBox={`0 ${peakY} ${W} ${H - peakY}`}
         preserveAspectRatio="none"
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-x-0 bottom-0 h-[58px] w-full"
       >
-        <path
-          d="M 0 0 L 105 0 A 25 25 0 0 0 155 0 L 260 0 L 260 42 L 0 42 Z"
-          fill={orgColor}
-        />
+        <path d={path} fill={orgColor} />
       </svg>
 
       {/* Tab items */}
       <div className="relative flex h-full items-end justify-around px-2 pb-1 text-white">
-        <TabItem iconSrc="/icons/track_tab_main.png" label="Track" />
-        <TabItem iconSrc="/icons/workouts_tab_main.png" label="Workouts" />
-        <div className="w-7" />
         <TabItem
-          iconSrc="/icons/community_tab_main.png"
+          mainIcon="/icons/track_tab_main.png"
+          lineIcon="/icons/track_tab_main_line.png"
+          label="Track"
+        />
+        <TabItem
+          mainIcon="/icons/workouts_tab_main.png"
+          lineIcon="/icons/workouts_tab_main_line.png"
+          label="Workouts"
+        />
+        <div className="w-9" />
+        <TabItem
+          mainIcon="/icons/community_tab_main.png"
+          lineIcon="/icons/community_tab_main_line.png"
           label="Community"
           active
         />
         <TabItem profile label="Profile" />
       </div>
 
-      {/* Center NFC scan button — full orgColor circle, dual shadow */}
-      <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
+      {/* Center NFC scan button — sits mostly INSIDE the bar (iOS:
+          offset = -barHeight/15 ≈ 7px up). Full orgColor, dual shadow. */}
+      <div className="absolute left-1/2 top-[2px] z-10 -translate-x-1/2 -translate-y-[40%]">
         <div
-          className="flex h-[34px] w-[34px] items-center justify-center rounded-full"
+          className="flex h-[28px] w-[28px] items-center justify-center rounded-full"
           style={{
             backgroundColor: orgColor,
             boxShadow:
-              "1.5px 1.5px 2px rgba(0,0,0,0.25), -1.5px -1.5px 2px rgba(255,255,255,0.10)",
+              "1.2px 1.2px 2px rgba(0,0,0,0.25), -1.2px -1.2px 2px rgba(255,255,255,0.10)",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/redprint-emblem.png"
             alt="Redprint"
-            className="h-[60%] w-[60%]"
+            className="h-[55%] w-[55%]"
           />
         </div>
       </div>
@@ -529,25 +558,29 @@ function TabBar({ org }: { org: Org }) {
 }
 
 function TabItem({
-  iconSrc,
+  mainIcon,
+  lineIcon,
   profile,
   label,
   active,
 }: {
-  iconSrc?: string;
+  mainIcon?: string;
+  lineIcon?: string;
   profile?: boolean;
   label: string;
   active?: boolean;
 }) {
+  // iOS: filled icon when selected, line icon when not. We use the same
+  // mask trick so both inherit currentColor (white).
+  const iconSrc = active ? mainIcon : lineIcon;
   return (
     <div
       className={`flex flex-col items-center gap-[1px] ${
-        active ? "text-white" : "text-white/50"
+        active ? "text-white" : "text-white/55"
       }`}
     >
       <div className="h-[14px] w-[14px]">
         {profile ? (
-          // Profile picture — circle with white stroke (1.5px @ 0.5/1.0)
           <div
             className="h-full w-full rounded-full bg-zinc-400"
             style={{

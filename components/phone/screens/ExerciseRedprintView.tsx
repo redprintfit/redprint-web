@@ -140,7 +140,9 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
         </div>
 
         {/* ---------- Video carousel ---------- */}
-        <div className="mt-2 flex flex-1 gap-1 overflow-hidden px-2">
+        {/* items-start so the explicit aspect ratio isn't overridden by
+            the parent flex-col stretch (which was making them too tall). */}
+        <div className="mt-2 flex items-start gap-1 overflow-hidden px-2">
           <VideoThumb src="/screens/exercise-thumb-1.png" />
           <VideoThumb src="/screens/exercise-video-hero.png" active />
           <VideoThumb src="/screens/exercise-thumb-2.png" />
@@ -148,7 +150,7 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
         </div>
 
         {/* ---------- Footer hint ---------- */}
-        <div className="light:text-black/40 py-1.5 text-center text-[7px] text-white/40">
+        <div className="light:text-black/40 mt-auto py-1.5 text-center text-[7px] text-white/40">
           Swipe up for more info ⌃
         </div>
       </div>
