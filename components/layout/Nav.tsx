@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { WEB_APP_URL } from "@/lib/constants";
 
 export function Nav() {
   return (
@@ -32,12 +33,12 @@ export function Nav() {
 
       {/* Top-right: Sign in CTA + theme toggle */}
       <div className="pointer-events-auto flex items-center gap-3">
-        <Link
-          href="/signin"
+        <a
+          href={WEB_APP_URL}
           className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition"
         >
           Sign in
-        </Link>
+        </a>
         <ThemeToggle />
       </div>
     </nav>
