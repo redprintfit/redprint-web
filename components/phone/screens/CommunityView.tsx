@@ -1,6 +1,6 @@
 "use client";
 
-import { darken, type Org } from "@/lib/content/orgs";
+import { darken, lighten, type Org } from "@/lib/content/orgs";
 import { useTheme } from "@/lib/useTheme";
 
 /* ---------- Brand color tokens from iOS ColorExtension.swift ---------- */
@@ -123,9 +123,15 @@ export function CommunityView({ org }: { org: Org }) {
       </header>
 
       {/* ---------- Leaderboard ---------- */}
-      <section className="px-3 pt-3">
+      {/* `relative` so the silhouette layer can sit at the section's bottom. */}
+      <section className="relative px-3 pt-3">
+        {/* Silhouette crowd at the bottom — three layered tinted PNGs,
+            mirrors the iOS ZStack with 3 people_silhouette images at
+            different orgColor darken/lighten variants. */}
+        <SilhouetteCrowd orgColor={orgColor} isDark={isDark} />
+
         {/* Podium row */}
-        <div className="flex items-end justify-center gap-1.5">
+        <div className="relative flex items-end gap-1.5">
           {/* 2nd place — silver */}
           <PodiumCell
             org={STATIC_LEADERBOARD.top3[0]}
@@ -159,7 +165,7 @@ export function CommunityView({ org }: { org: Org }) {
         </div>
 
         {/* 4th and 5th rows */}
-        <div className="mt-2 space-y-1.5">
+        <div className="relative mt-2 space-y-1.5 pb-6">
           {STATIC_LEADERBOARD.rows.map((row, i) => (
             <BottomRow key={row.shortName} rank={i + 4} org={row} />
           ))}
@@ -224,7 +230,7 @@ function PodiumCell({
 }) {
   return (
     <div
-      className="light:bg-white relative flex w-[58px] flex-col items-center rounded-[10px] bg-black pb-1.5 pt-2"
+      className="light:bg-white relative flex flex-1 flex-col items-center rounded-[10px] bg-black pb-1.5 pt-2"
       style={{
         borderTopLeftRadius: 60,
         borderTopRightRadius: 60,
@@ -674,6 +680,53 @@ function Triangle({ direction }: { direction: "up" | "down" }) {
     >
       <polygon points="5,0 10,10 0,10" fill="currentColor" />
     </svg>
+  );
+}
+
+/* ============================================================
+   Silhouette crowd (people_silhouette_1/2/3, tinted with org color)
+   Mirrors CommunityView.swift:
+     dark mode:  layers tinted with orgColor darken(0.6), darken(0.3),
+                 lighter(0.1), at compositingGroup opacity 0.2
+     light mode: lighter(0.5), lighter(0.2), darker(0.2) @ 0.4 opacity
+   ============================================================ */
+function SilhouetteCrowd({
+  orgColor,
+  isDark,
+}: {
+  orgColor: string;
+  isDark: boolean;
+}) {
+  const groupOpacity = isDark ? 0.2 : 0.4;
+
+  // Tint colors per layer (from iOS CommunityView.swift).
+  const tints = isDark
+    ? [darken(orgColor, 60), darken(orgColor, 30), lighten(orgColor, 10)]
+    : [lighten(orgColor, 50), lighten(orgColor, 20), darken(orgColor, 20)];
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-0"
+      style={{ opacity: groupOpacity, height: 180 }}
+    >
+      {[1, 2, 3].map((n, i) => (
+        <div
+          key={n}
+          className="absolute inset-x-0 bottom-0 h-full"
+          style={{
+            backgroundColor: tints[i],
+            WebkitMaskImage: `url(/silhouettes/people-${n}.png)`,
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "bottom",
+            WebkitMaskSize: "100% auto",
+            maskImage: `url(/silhouettes/people-${n}.png)`,
+            maskRepeat: "no-repeat",
+            maskPosition: "bottom",
+            maskSize: "100% auto",
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
