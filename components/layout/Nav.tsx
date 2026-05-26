@@ -31,8 +31,14 @@ export function Nav() {
         />
       </Link>
 
-      {/* Top-right: Sign in CTA + theme toggle */}
+      {/* Top-right: Pricing link + Sign in CTA + theme toggle */}
       <div className="pointer-events-auto flex items-center gap-3">
+        <Link
+          href="/pricing"
+          className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+        >
+          Pricing
+        </Link>
         <a
           href={WEB_APP_URL}
           className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition"
