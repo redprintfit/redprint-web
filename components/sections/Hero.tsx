@@ -208,7 +208,12 @@ export function Hero() {
               <motion.div
                 key={id}
                 ref={openingDone ? undefined : (ref ?? undefined)}
-                className="absolute"
+                className={`absolute ${slot < 3 && openingDone ? "pointer-events-auto cursor-pointer" : ""}`}
+                onClick={() => {
+                  // Click on a visible (non-front) phone promotes it to
+                  // the front slot. Slot 0 (already front) is a no-op.
+                  if (openingDone && slot > 0 && slot < 3) setPhoneTick(i);
+                }}
                 // Slots 0/1/2 are managed by GSAP during the opening (no
                 // initial). Slots 3/4 are off-stage (opacity 0) the whole
                 // time — give them a baked initial so they don't flash at
