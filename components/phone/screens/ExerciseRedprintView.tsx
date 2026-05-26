@@ -77,7 +77,7 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
         </div>
 
         {/* ---------- exerciseRow ---------- */}
-        <div className="flex items-center gap-1.5 px-3 pt-2">
+        <div className="flex items-center gap-1.5 px-3 pb-1 pt-3">
           <button
             className="light:text-black/80 flex h-5 w-5 items-center justify-center text-white/80"
             aria-label="Back"
