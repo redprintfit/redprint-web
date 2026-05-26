@@ -483,7 +483,9 @@ function TabBar({ org }: { org: Org }) {
   const BAR_H = 48; // visible bar height (bottom portion of nav)
   const PEAK_H = 14; // how far the bump extends above the bar top
   const NAV_H = BAR_H + PEAK_H; // total nav height incl. bump room
-  const HALF_W = 50; // half-width where bump meets bar top
+  // iOS: button is ~51% of bump width. Match that ratio with our 36px
+  // button: bump halfW = 36/2 / 0.51 = ~35 → bump total width 70.
+  const HALF_W = 30; // half-width where bump meets bar top
   const CX = W / 2;
   const CTRL = HALF_W * 0.45;
   const BAR_TOP = PEAK_H; // y of the bar's flat top (in nav coords)
@@ -503,9 +505,9 @@ function TabBar({ org }: { org: Org }) {
     Z
   `;
 
-  // NFC button — mostly inside the bar, top extending into the bump.
-  const BUTTON_SIZE = 30;
-  const BUTTON_CENTER_Y = BAR_TOP + 4; // 4px below bar top
+  // NFC button — centered on the bump so it fills it like in iOS.
+  const BUTTON_SIZE = 36;
+  const BUTTON_CENTER_Y = BAR_TOP - 1; // straddles the bar's top edge
 
   return (
     <nav className="relative" style={{ height: NAV_H }}>
