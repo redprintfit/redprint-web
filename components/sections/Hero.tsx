@@ -227,7 +227,10 @@ export function Hero() {
 
           <h1
             className="text-fg-base text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-[4.25rem]"
-            style={{ fontWeight: 800 }}
+            style={{
+              fontWeight: 800,
+              textShadow: "6px 6px 0 rgba(0, 0, 0, 0.25)",
+            }}
           >
             <TypewriterText text={HEADLINE} start={typingStarted} />
           </h1>
