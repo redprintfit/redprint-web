@@ -131,11 +131,16 @@ export function Hero() {
         { opacity: 1, x: 0, duration: 0.7, ease: "power2.out" },
         "shift",
       );
+      // Typing kicks off mid-shift.
       tl.call(() => setTypingStarted(true), [], "shift+=0.3");
+
+      // Carousel + CTAs hold off until the headline finishes typing.
+      // Typing math: pre-blink (0.6s) + chars × speed (42ms × 31 chars ≈ 1.3s).
+      // Start typing at shift+0.3, so typing completes ~shift+2.2s.
       tl.to(
         carouselRef.current,
         { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
-        "+=0.4",
+        "shift+=2.3",
       );
       tl.to(
         ctasRef.current,

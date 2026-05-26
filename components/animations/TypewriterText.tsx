@@ -6,7 +6,7 @@ type Props = {
   text: string;
   /** Set true to begin the sequence (blink → type → blink → fade out cursor). */
   start: boolean;
-  /** Ms per character (default 28). */
+  /** Ms per character (default 42). */
   speed?: number;
   className?: string;
 };
@@ -23,7 +23,7 @@ type Props = {
  * Reserves final-layout width via a visibility:hidden tail span so the
  * surrounding layout doesn't reflow while typing.
  */
-export function TypewriterText({ text, start, speed = 28, className }: Props) {
+export function TypewriterText({ text, start, speed = 42, className }: Props) {
   const [shown, setShown] = useState(0);
   const [cursorOn, setCursorOn] = useState(false);
 
