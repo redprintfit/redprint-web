@@ -27,9 +27,9 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
   return (
     <div className="flex h-full flex-col bg-black">
       {/* ============================================================
-          Video hero (top ~half)
+          Video hero (fills remaining space above the bottom sheet)
           ============================================================ */}
-      <div className="relative h-[58%] overflow-hidden bg-neutral-900">
+      <div className="relative flex-1 overflow-hidden bg-neutral-900">
         {/* Sample iOS video still — gym trainer demonstrating an exercise. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -51,10 +51,12 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
       </div>
 
       {/* ============================================================
-          Bottom sheet (modal at small detent) — pulled up over the
-          video so the rounded top clips the video, not the black bg.
+          Bottom sheet (modal at small detent) — sizes to content so
+          there's no empty space between the carousel and the footer.
+          Pulled up over the video so the rounded top clips the video,
+          not the black bg.
           ============================================================ */}
-      <div className="light:bg-[#fdf6f0] light:text-black -mt-3 flex flex-1 flex-col rounded-t-2xl bg-[#15090a] text-white">
+      <div className="light:bg-[#fdf6f0] light:text-black -mt-3 flex flex-col rounded-t-2xl bg-[#15090a] text-white">
         {/* Drag indicator */}
         <div className="flex justify-center pt-1.5">
           <div className="light:bg-black/25 h-[3px] w-7 rounded-full bg-white/30" />
@@ -62,22 +64,20 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
 
         {/* ---------- exerciseRow ---------- */}
         <div className="flex items-center gap-1.5 px-3 pt-2">
-          <button className="light:text-black/80 text-[12px] text-white/80">
-            ‹
+          <button
+            className="light:text-black/80 flex h-5 w-5 items-center justify-center text-white/80"
+            aria-label="Back"
+          >
+            <ChevronLeft />
           </button>
           {/* Exercise image — circle 32px (scaled from iOS 75px) */}
-          <div
-            className="light:border-black/25 h-[32px] w-[32px] flex-shrink-0 overflow-hidden rounded-full border-[0.5px] border-white/25"
-            style={{
-              background:
-                "linear-gradient(135deg, #5a4030 0%, #2a1a12 60%, #18100c 100%)",
-            }}
-          >
-            {/* Placeholder of an athlete on equipment — simplified abstract */}
-            <div className="relative h-full w-full">
-              <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30" />
-              <div className="absolute bottom-0 left-1/2 h-2 w-4 -translate-x-1/2 rounded-t-md bg-white/20" />
-            </div>
+          <div className="light:border-black/25 h-[32px] w-[32px] flex-shrink-0 overflow-hidden rounded-full border-[0.5px] border-white/25">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/screens/glute-drive-exercise.jpg"
+              alt="Glute Drive"
+              className="h-full w-full object-cover"
+            />
           </div>
           <span
             className="light:text-black flex-1 text-[12px] leading-tight text-white"
@@ -150,7 +150,7 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
         </div>
 
         {/* ---------- Footer hint ---------- */}
-        <div className="light:text-black/40 mt-auto py-1.5 text-center text-[7px] text-white/40">
+        <div className="light:text-black/40 py-1.5 text-center text-[7px] text-white/40">
           Swipe up for more info ⌃
         </div>
       </div>
@@ -226,6 +226,20 @@ function BlobAvatar() {
     >
       <div className="h-[6px] w-[6px] rounded-full bg-white/80" />
     </div>
+  );
+}
+
+function ChevronLeft() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="h-3.5 w-3.5 fill-none stroke-current"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="10,3 5,8 10,13" />
+    </svg>
   );
 }
 
