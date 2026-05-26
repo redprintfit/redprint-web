@@ -140,10 +140,10 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
 
         {/* ---------- Video carousel ---------- */}
         <div className="mt-2 flex flex-1 gap-1 overflow-hidden px-2">
-          <VideoThumb />
-          <VideoThumb active />
-          <VideoThumb />
-          <VideoThumb />
+          <VideoThumb src="/screens/exercise-thumb-1.png" />
+          <VideoThumb src="/screens/exercise-video-hero.png" active />
+          <VideoThumb src="/screens/exercise-thumb-2.png" />
+          <VideoThumb src="/screens/exercise-thumb-3.png" />
         </div>
 
         {/* ---------- Footer hint ---------- */}
@@ -159,24 +159,28 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
    Video thumbnail (RedprintVideoThumbnail at small detent)
    ============================================================ */
 
-function VideoThumb({ active }: { active?: boolean }) {
+function VideoThumb({ active, src }: { active?: boolean; src: string }) {
   return (
     <div
       className="relative aspect-[2/3] flex-1 overflow-hidden rounded-[10px]"
       style={{
-        background:
-          "linear-gradient(180deg, #4a3a30 0%, #2a1a14 60%, #18100c 100%)",
         boxShadow: active
           ? "0 0 0 1.5px #3b82f6, 0 0 0 3px transparent"
           : "inset 0 0 0 0.5px rgba(255,255,255,0.25)",
       }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+      />
       {/* Dark gradient overlay so text reads on any thumbnail */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+            "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.85) 100%)",
         }}
       />
       {/* "Now playing" label (only on active) */}
