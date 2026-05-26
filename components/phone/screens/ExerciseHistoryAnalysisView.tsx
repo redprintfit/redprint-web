@@ -197,8 +197,10 @@ function ChartSection({
         Volume (lbs)
       </span>
 
-      {/* Chart */}
-      <Chart palette={palette} />
+      {/* Chart — extends past the parent's right padding to the screen edge */}
+      <div className="-mr-2.5">
+        <Chart palette={palette} />
+      </div>
 
       {/* Pagination */}
       <Pagination isDark={isDark} />
@@ -308,7 +310,7 @@ function Chart({ palette }: { palette: string[] }) {
   const W = 220;
   const H = 135;
   const PL = 28; // left padding (y-axis labels)
-  const PR = 4; // right padding
+  const PR = 2; // right padding (minimal — chart extends to screen edge)
   const PT = 6; // top padding
   const PB = 14; // bottom padding (x-axis labels)
   const plotW = W - PL - PR;
@@ -365,7 +367,7 @@ function Chart({ palette }: { palette: string[] }) {
   };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-[135px] w-full">
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-[170px] w-full">
       {/* Y-axis ticks + grid lines */}
       {yTicks.map((v, i) => {
         const y = yToPx(v);
