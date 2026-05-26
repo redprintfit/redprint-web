@@ -178,7 +178,7 @@ function InfoStatCell({
 function FinishButton() {
   return (
     <button
-      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5"
+      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5 text-left"
       style={{
         background: "linear-gradient(to top right, #2563eb, #22d3ee)",
         boxShadow: "0 3px 0 0 rgb(29, 78, 216)",
@@ -203,7 +203,7 @@ function FinishButton() {
 function AllExercisesButton() {
   return (
     <button
-      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5"
+      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5 text-left"
       style={{
         background: "linear-gradient(to top right, #047857, #22c55e)",
         boxShadow: "0 3px 0 0 rgb(20, 83, 45)",
