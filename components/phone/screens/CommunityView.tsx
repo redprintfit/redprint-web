@@ -129,8 +129,8 @@ export function CommunityView({ org }: { org: Org }) {
             rankDelta={1}
           />
           {/* 1st place — gold, ACTIVE ORG (highlighted green). Uses the
-              org's logoSrc from orgs.ts (PNG); the decorative 2nd/3rd
-              positions still use the JPG variants from Gym Photos. */}
+              jpg variant lifted from Redprint5/Assets.xcassets/Gym Logos
+              (matches the styling of the static 2nd/3rd positions). */}
           <PodiumCell
             org={{
               shortName: org.shortName,
@@ -138,7 +138,7 @@ export function CommunityView({ org }: { org: Org }) {
               location: `${org.name.split(" ")[0]}, PA`,
               pointsBehind: "",
               color: orgColor,
-              logoSrc: org.logoSrc,
+              logoSrc: `/logos/${org.id}.jpg`,
             }}
             place={1}
             heightOffset={0}
@@ -262,7 +262,7 @@ function PodiumCell({
           <img
             src={org.logoSrc}
             alt={`${org.name} logo`}
-            className="h-[80%] w-[80%] object-contain"
+            className="h-full w-full object-cover"
           />
         ) : (
           <span
@@ -335,7 +335,7 @@ function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
           <img
             src={org.logoSrc}
             alt={`${org.name} logo`}
-            className="h-[80%] w-[80%] object-contain"
+            className="h-full w-full object-cover"
           />
         ) : (
           <span className="text-[9px] font-bold leading-none text-white">

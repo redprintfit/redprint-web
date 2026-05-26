@@ -244,13 +244,15 @@ export function Hero() {
               href="/for-gyms"
               className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition"
             >
-              Redprint for gyms <span>›</span>
+              Redprint for gyms{" "}
+              <span className="text-lg leading-none">›</span>
             </a>
             <a
               href="#request"
               className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition"
             >
-              Request your gym <span>›</span>
+              Request your gym{" "}
+              <span className="text-lg leading-none">›</span>
             </a>
           </div>
         </div>
