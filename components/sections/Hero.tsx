@@ -222,7 +222,7 @@ export function Hero() {
 
         <div className="absolute inset-y-0 right-6 flex w-[580px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
           <div ref={markRef} className="text-fg-base">
-            <RedprintMark className="h-9 w-9" />
+            <RedprintMark className="h-14 w-14" />
           </div>
 
           <h1
@@ -245,7 +245,7 @@ export function Hero() {
             </a>
             <a
               href="#request"
-              className="bg-brand-red hover:bg-brand-red-hover inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition"
+              className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition"
             >
               Request your gym <span>›</span>
             </a>
