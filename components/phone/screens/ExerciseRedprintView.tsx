@@ -1,82 +1,158 @@
-import { type Org } from "@/lib/content/orgs";
+"use client";
+
+import { darken, type Org } from "@/lib/content/orgs";
+import { useTheme } from "@/lib/useTheme";
+
+/* ---------- Brand color tokens from ColorExtension.swift ---------- */
+const OSWEGO_CG1 = "rgb(4, 130, 0)"; // .oswegoCG1 — Add Exercise gradient start
+const ADD_GREEN = "rgb(34, 197, 94)"; // .green — Add Exercise gradient end
+const BLOB_BG = "#3a3340"; // BlobAvatarView idle placeholder
 
 /**
- * Exercise detail (Glute Drive) — video hero + bottom sheet with actions
- * and a horizontal video carousel.
+ * Exercise detail (Glute Drive) — video hero + bottom sheet.
+ * Faithfully ported from
+ * Redprint5/Shared SubViews/ExerciseRedprintView.swift.
+ *
+ * Org-color theming:
+ *   - Generate Workout button gradient → [orgColor.darker(25%), orgColor]
+ *   - Generate Workout shadow          → orgColor.darker(45%)
+ *   - Exercise thumb stroke (when org matches video org) → orgColor 2px
  */
-export function ExerciseRedprintView(_props: { org: Org }) {
+export function ExerciseRedprintView({ org }: { org: Org }) {
+  const orgColor = org.primaryColor;
+  const orgDarker25 = darken(orgColor, 25);
+  const orgDarker45 = darken(orgColor, 45);
+  const _isDark = useTheme() === "dark";
+
   return (
-    <div className="light:bg-white flex h-full flex-col bg-black">
-      {/* Video / image hero (placeholder gradient stands in for the gym video) */}
-      <div
-        className="relative flex-1"
-        style={{
-          background:
-            "linear-gradient(180deg, #6b6f78 0%, #4a4d54 50%, #25262a 100%)",
-        }}
-      >
+    <div className="flex h-full flex-col bg-black">
+      {/* ============================================================
+          Video hero (top ~half)
+          ============================================================ */}
+      <div className="relative h-[58%] overflow-hidden bg-neutral-900">
+        {/* Placeholder for the gym video — gray gradient stands in. */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #6b6f78 0%, #4a4d54 50%, #25262a 100%)",
+          }}
+        />
         {/* Implied equipment silhouette via dark blobs */}
         <div className="absolute inset-x-0 top-12 mx-auto h-24 w-32 rounded-full bg-black/30 blur-2xl" />
         <div className="absolute bottom-0 left-0 h-20 w-16 rounded-full bg-black/40 blur-xl" />
         <div className="absolute bottom-0 right-0 h-20 w-16 rounded-full bg-black/40 blur-xl" />
 
-        <div className="absolute inset-x-0 bottom-4 text-center text-[8px] text-white/50">
-          ⌃<br />
+        {/* ExitModalButton (back chevron, top-left) */}
+        <button className="absolute left-2.5 top-7 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-[12px] text-white backdrop-blur">
+          ‹
+        </button>
+
+        {/* "Tap above to play video" prompt */}
+        <div className="absolute inset-x-0 bottom-3 text-center text-[8px] text-white/60">
+          <div className="text-[10px]">⌃</div>
           Tap above to play video
         </div>
       </div>
 
-      {/* Bottom sheet */}
-      <div className="light:bg-[#fdf6f0] rounded-t-2xl bg-[#1c0d0e] px-2.5 pb-3 pt-1.5">
+      {/* ============================================================
+          Bottom sheet (modal at small detent)
+          ============================================================ */}
+      <div className="light:bg-[#fdf6f0] light:text-black flex flex-1 flex-col rounded-t-2xl bg-[#15090a] text-white">
         {/* Drag indicator */}
-        <div className="light:bg-black/25 mx-auto h-[3px] w-7 rounded-full bg-white/30" />
-
-        {/* Title row */}
-        <div className="mt-2 flex items-center gap-1.5">
-          <div className="light:text-black/70 text-[10px] text-white/70">‹</div>
-          <div className="light:bg-black/10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
-            <div className="h-5 w-5 rounded-full bg-[#7B4F2C]" />
-          </div>
-          <div className="light:text-black flex-1 text-[11px] font-bold text-white">
-            Glute Drive
-          </div>
-          <div className="light:bg-black/10 light:text-black/70 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[8px] text-white/70">
-            ✕
-          </div>
+        <div className="flex justify-center pt-1.5">
+          <div className="light:bg-black/25 h-[3px] w-7 rounded-full bg-white/30" />
         </div>
 
-        {/* Action row */}
-        <div className="mt-2 flex items-center gap-1">
-          <div className="light:bg-black/8 light:text-black flex h-7 w-7 items-center justify-center rounded-md bg-white/8 text-[9px]">
-            ♡
+        {/* ---------- exerciseRow ---------- */}
+        <div className="flex items-center gap-1.5 px-3 pt-2">
+          <button className="light:text-black/80 text-[12px] text-white/80">
+            ‹
+          </button>
+          {/* Exercise image — circle 32px (scaled from iOS 75px) */}
+          <div
+            className="light:border-black/25 h-[32px] w-[32px] flex-shrink-0 overflow-hidden rounded-full border-[0.5px] border-white/25"
+            style={{
+              background:
+                "linear-gradient(135deg, #5a4030 0%, #2a1a12 60%, #18100c 100%)",
+            }}
+          >
+            {/* Placeholder of an athlete on equipment — simplified abstract */}
+            <div className="relative h-full w-full">
+              <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30" />
+              <div className="absolute bottom-0 left-1/2 h-2 w-4 -translate-x-1/2 rounded-t-md bg-white/20" />
+            </div>
           </div>
-          <div className="flex h-7 flex-1 items-center justify-between rounded-md bg-[#b91c2e] px-2 text-[8px] font-bold leading-tight text-white">
-            <span>
+          <span
+            className="light:text-black flex-1 text-[12px] leading-tight text-white"
+            style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
+          >
+            Glute Drive
+          </span>
+          <button className="light:bg-black/10 light:text-black flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
+            ✕
+          </button>
+        </div>
+
+        {/* ---------- Action buttons row ---------- */}
+        <div className="mt-2 flex items-stretch gap-1.5 px-2">
+          {/* Favorite (heart) button — primary/0.15 bg */}
+          <button
+            className="light:bg-black/15 flex items-center justify-center rounded-[8px] bg-white/15 px-2.5"
+            aria-label="Favorite"
+          >
+            <HeartIcon />
+          </button>
+
+          {/* Generate Workout — org-color gradient + shadow */}
+          <button
+            className="flex flex-1 items-center justify-between gap-1 rounded-[8px] px-1.5 py-1"
+            style={{
+              background: `linear-gradient(to top right, ${orgDarker25}, ${orgColor})`,
+              boxShadow: `0 3px 0 0 ${orgDarker45}`,
+            }}
+          >
+            <span
+              className="text-[10px] leading-tight text-white"
+              style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+            >
               Generate
               <br />
               Workout
             </span>
-            <span className="h-3 w-3 rounded-full bg-white/30" />
-          </div>
-          <div className="flex h-7 flex-1 items-center justify-between rounded-md bg-[#22c55e] px-2 text-[8px] font-bold leading-tight text-white">
-            <span>
+            <BlobAvatar />
+          </button>
+
+          {/* Add Exercise — oswego/green gradient */}
+          <button
+            className="flex flex-1 items-center justify-between gap-1 rounded-[8px] px-1.5 py-1"
+            style={{
+              background: `linear-gradient(to top right, ${OSWEGO_CG1}, ${ADD_GREEN})`,
+              boxShadow: `0 3px 0 0 ${darken("#22c55e", 45)}`,
+            }}
+          >
+            <span
+              className="text-[10px] leading-tight text-white"
+              style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+            >
               Add Exercise
               <br />
               to Workout
             </span>
-            <span className="text-[10px]">+</span>
-          </div>
+            <PlusIcon />
+          </button>
         </div>
 
-        {/* Video carousel */}
-        <div className="mt-2 flex gap-1 overflow-hidden">
+        {/* ---------- Video carousel ---------- */}
+        <div className="mt-2 flex flex-1 gap-1 overflow-hidden px-2">
           <VideoThumb />
-          <VideoThumb active label="Now playing" sub="@gymitfitne…" />
+          <VideoThumb active />
           <VideoThumb />
           <VideoThumb />
         </div>
 
-        <div className="light:text-black/40 mt-1.5 text-center text-[7px] text-white/40">
+        {/* ---------- Footer hint ---------- */}
+        <div className="light:text-black/40 py-1.5 text-center text-[7px] text-white/40">
           Swipe up for more info ⌃
         </div>
       </div>
@@ -84,32 +160,96 @@ export function ExerciseRedprintView(_props: { org: Org }) {
   );
 }
 
-function VideoThumb({
-  active,
-  label,
-  sub,
-}: {
-  active?: boolean;
-  label?: string;
-  sub?: string;
-}) {
+/* ============================================================
+   Video thumbnail (RedprintVideoThumbnail at small detent)
+   ============================================================ */
+
+function VideoThumb({ active }: { active?: boolean }) {
   return (
     <div
-      className={`relative aspect-[2/3] flex-1 overflow-hidden rounded-md ${active ? "ring-2 ring-sky-400" : ""}`}
+      className="relative aspect-[2/3] flex-1 overflow-hidden rounded-[10px]"
       style={{
         background:
           "linear-gradient(180deg, #4a3a30 0%, #2a1a14 60%, #18100c 100%)",
+        boxShadow: active
+          ? "0 0 0 1.5px #3b82f6, 0 0 0 3px transparent"
+          : "inset 0 0 0 0.5px rgba(255,255,255,0.25)",
       }}
     >
-      {active && label && (
-        <div className="absolute inset-x-0 top-0.5 text-center text-[6px] font-bold text-orange-400">
-          {label}
+      {/* Dark gradient overlay so text reads on any thumbnail */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+        }}
+      />
+      {/* "Now playing" label (only on active) */}
+      {active && (
+        <div className="absolute inset-x-0 top-1 text-center text-[6.5px] font-bold text-orange-400">
+          Now playing
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0.5 px-1 text-[7px] font-medium text-white">
-        How to
-        {sub && <div className="text-[5.5px] text-white/60">{sub}</div>}
+      {/* Title at bottom */}
+      <div className="absolute inset-x-0 bottom-1 px-1.5">
+        <div
+          className="text-[8px] leading-tight text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
+        >
+          How to
+        </div>
+        {active && (
+          <div className="text-[5.5px] text-white/65">@gymitfitne…</div>
+        )}
       </div>
     </div>
+  );
+}
+
+/* ============================================================
+   Sub-components
+   ============================================================ */
+
+/**
+ * BlobAvatarView idle placeholder. iOS draws a complex blob; this is
+ * a simplified equivalent at the small size used in the button (~14px).
+ */
+function BlobAvatar() {
+  return (
+    <div
+      className="flex h-[14px] w-[14px] flex-shrink-0 items-center justify-center rounded-full"
+      style={{
+        background: `radial-gradient(circle at 40% 35%, #d4d4d8 0%, ${BLOB_BG} 90%)`,
+      }}
+    >
+      <div className="h-[6px] w-[6px] rounded-full bg-white/80" />
+    </div>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="light:fill-black h-3.5 w-3.5 fill-white"
+    >
+      <path d="M10 17 C 10 17 2 11.5 2 6.5 A 4 4 0 0 1 10 4.5 A 4 4 0 0 1 18 6.5 C 18 11.5 10 17 10 17 Z" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="h-3 w-3 flex-shrink-0"
+      fill="none"
+      stroke="white"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    >
+      <line x1="8" y1="3" x2="8" y2="13" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+    </svg>
   );
 }
