@@ -51,9 +51,10 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
       </div>
 
       {/* ============================================================
-          Bottom sheet (modal at small detent)
+          Bottom sheet (modal at small detent) — pulled up over the
+          video so the rounded top clips the video, not the black bg.
           ============================================================ */}
-      <div className="light:bg-[#fdf6f0] light:text-black flex flex-1 flex-col rounded-t-2xl bg-[#15090a] text-white">
+      <div className="light:bg-[#fdf6f0] light:text-black -mt-3 flex flex-1 flex-col rounded-t-2xl bg-[#15090a] text-white">
         {/* Drag indicator */}
         <div className="flex justify-center pt-1.5">
           <div className="light:bg-black/25 h-[3px] w-7 rounded-full bg-white/30" />
