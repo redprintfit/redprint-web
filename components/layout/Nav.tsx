@@ -1,9 +1,39 @@
+import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function Nav() {
   return (
-    <nav className="fixed top-0 right-0 z-50 p-4 md:p-6">
-      <ThemeToggle />
+    <nav className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-4 md:p-6">
+      {/* Top-left: full Redprint wordmark — rendered as a CSS mask so the
+          single white asset adapts to currentColor (text-fg-base flips
+          white in dark, dark in light). */}
+      <Link
+        href="/"
+        aria-label="Redprint"
+        className="text-fg-base pointer-events-auto block"
+      >
+        <div
+          role="img"
+          aria-label="Redprint"
+          className="h-7 w-[120px] md:h-8 md:w-[140px]"
+          style={{
+            backgroundColor: "currentColor",
+            WebkitMaskImage: "url(/logos/redprint-logo-full.png)",
+            WebkitMaskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "left center",
+            maskImage: "url(/logos/redprint-logo-full.png)",
+            maskSize: "contain",
+            maskRepeat: "no-repeat",
+            maskPosition: "left center",
+          }}
+        />
+      </Link>
+
+      {/* Top-right: theme toggle */}
+      <div className="pointer-events-auto">
+        <ThemeToggle />
+      </div>
     </nav>
   );
 }
