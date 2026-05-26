@@ -32,7 +32,7 @@ export function Nav() {
       </Link>
 
       {/* Top-right: Pricing link + Sign in CTA + theme toggle */}
-      <div className="pointer-events-auto flex items-center gap-3">
+      <div className="pointer-events-auto flex items-center gap-6">
         <Link
           href="/pricing"
           className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
