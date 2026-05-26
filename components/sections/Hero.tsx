@@ -23,11 +23,11 @@ const ROTATION_DURATION = 0.6;
 const ROTATION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const SCREENS = [
-  { id: "exercise-redprint", Component: ExerciseRedprintView },
-  { id: "ai-chatbot", Component: AIChatbotView },
-  { id: "community", Component: CommunityView },
   { id: "home-workout", Component: HomeWorkoutView },
+  { id: "ai-chatbot", Component: AIChatbotView },
   { id: "exercise-history", Component: ExerciseHistoryAnalysisView },
+  { id: "exercise-redprint", Component: ExerciseRedprintView },
+  { id: "community", Component: CommunityView },
 ] as const;
 
 /**
