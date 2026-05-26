@@ -30,18 +30,13 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
           Video hero (top ~half)
           ============================================================ */}
       <div className="relative h-[58%] overflow-hidden bg-neutral-900">
-        {/* Placeholder for the gym video — gray gradient stands in. */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, #6b6f78 0%, #4a4d54 50%, #25262a 100%)",
-          }}
+        {/* Sample iOS video still — gym trainer demonstrating an exercise. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/screens/exercise-video-hero.png"
+          alt="Exercise video"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Implied equipment silhouette via dark blobs */}
-        <div className="absolute inset-x-0 top-12 mx-auto h-24 w-32 rounded-full bg-black/30 blur-2xl" />
-        <div className="absolute bottom-0 left-0 h-20 w-16 rounded-full bg-black/40 blur-xl" />
-        <div className="absolute bottom-0 right-0 h-20 w-16 rounded-full bg-black/40 blur-xl" />
 
         {/* ExitModalButton (back chevron, top-left) */}
         <button className="absolute left-2.5 top-7 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-[12px] text-white backdrop-blur">
