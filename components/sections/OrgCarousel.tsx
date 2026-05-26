@@ -26,15 +26,21 @@ const ACTIVE_SCALE = 1.3;
 const ACTIVE_EXTRA = ITEM_SIZE * (ACTIVE_SCALE - 1); // 16.8
 
 /** Cumulative x position (left edge) for each slot. Gaps after each slot
- *  shrink the further from active: 18 / 10 / 6 px. The first gap also
- *  accounts for the larger active item. */
+ *  shrink the further from active. The first gap also accounts for the
+ *  larger active item. */
 const SLOT_X = [
   0,
   ITEM_SIZE + ACTIVE_EXTRA + 18, // ~91
   ITEM_SIZE + ACTIVE_EXTRA + 18 + ITEM_SIZE + 10, // ~157
   ITEM_SIZE + ACTIVE_EXTRA + 18 + ITEM_SIZE + 10 + ITEM_SIZE + 6, // ~219
+  ITEM_SIZE + ACTIVE_EXTRA + 18 + ITEM_SIZE + 10 + ITEM_SIZE + 6 + ITEM_SIZE + 4, // ~279
 ];
-const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // ~275
+const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // ~335
+
+/** Per-slot visual styling. Indexed by position (0 = active). */
+const SLOT_OPACITY = [1, 0.5, 0.3, 0.18, 0.08];
+const SLOT_SCALE_X = [ACTIVE_SCALE, 0.85, 0.7, 0.55, 0.4];
+const SLOT_SCALE_Y = [ACTIVE_SCALE, 0.94, 0.88, 0.82, 0.75];
 
 /**
  * Horizontal "wheel picker" carousel. Active item is leftmost and fully
@@ -48,7 +54,7 @@ const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // ~275
  */
 export function OrgCarousel({
   orgs,
-  visibleCount = 4,
+  visibleCount = 5,
   intervalMs = 5000,
   activeIndex: controlledIndex,
   onActiveChange,
@@ -82,12 +88,9 @@ export function OrgCarousel({
     >
       <AnimatePresence initial={false}>
         {visible.map((org, pos) => {
-          const opacity =
-            pos === 0 ? 1 : ([null, 0.5, 0.3, 0.18][pos] ?? 0.15);
-          const scaleX =
-            pos === 0 ? ACTIVE_SCALE : Math.max(0.5, 1 - pos * 0.15);
-          const scaleY =
-            pos === 0 ? ACTIVE_SCALE : Math.max(0.8, 1 - pos * 0.06);
+          const opacity = SLOT_OPACITY[pos] ?? 0;
+          const scaleX = SLOT_SCALE_X[pos] ?? 0.3;
+          const scaleY = SLOT_SCALE_Y[pos] ?? 0.7;
           const x = SLOT_X[pos] ?? SLOT_X[SLOT_X.length - 1] + 60;
 
           return (
