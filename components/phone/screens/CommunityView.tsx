@@ -476,44 +476,53 @@ function WorkoutPostCard({
 function TabBar({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
 
-  // Scaled from iOS BarWithBump (barHeight 110, bumpRadius 160,
-  // bumpCenterBelowTop 137 → halfW≈82.7, peakY≈-23).
-  // Scale ≈ 0.45 to fit our 260×48 bar.
+  // Geometry — scaled from iOS BarWithBump (barH 110, bumpR 160,
+  // bumpCenterBelow 137 → halfW≈83, peakY≈-23; button 85 sits offset
+  // y -7 from bar center).
   const W = 260;
-  const H = 48;
-  const peakY = -10; // peak above bar top
-  const halfW = 40; // half-width where the bump arc meets the bar top
-  const cx = W / 2;
-  const ctrl = halfW * 0.45;
+  const BAR_H = 48; // visible bar height (bottom portion of nav)
+  const PEAK_H = 14; // how far the bump extends above the bar top
+  const NAV_H = BAR_H + PEAK_H; // total nav height incl. bump room
+  const HALF_W = 50; // half-width where bump meets bar top
+  const CX = W / 2;
+  const CTRL = HALF_W * 0.45;
+  const BAR_TOP = PEAK_H; // y of the bar's flat top (in nav coords)
+  const PEAK_Y = 0; // y of the bump's peak (top of nav)
 
-  // S-curve path (matches iOS BarWithBump exactly, scaled).
+  // Two cubic Bezier curves forming the S-shape bump.
+  // Both control points share x with the start/end (creating horizontal
+  // departure from the bar top and vertical arrival at the peak).
   const path = `
-    M 0 0
-    L ${cx - halfW} 0
-    C ${cx - halfW + ctrl} 0, ${cx - ctrl} ${peakY}, ${cx} ${peakY}
-    C ${cx + ctrl} ${peakY}, ${cx + halfW - ctrl} 0, ${cx + halfW} 0
-    L ${W} 0
-    L ${W} ${H}
-    L 0 ${H}
+    M 0 ${BAR_TOP}
+    L ${CX - HALF_W} ${BAR_TOP}
+    C ${CX - CTRL} ${BAR_TOP}, ${CX - CTRL} ${PEAK_Y}, ${CX} ${PEAK_Y}
+    C ${CX + CTRL} ${PEAK_Y}, ${CX + CTRL} ${BAR_TOP}, ${CX + HALF_W} ${BAR_TOP}
+    L ${W} ${BAR_TOP}
+    L ${W} ${NAV_H}
+    L 0 ${NAV_H}
     Z
   `;
 
+  // NFC button — mostly inside the bar, top extending into the bump.
+  const BUTTON_SIZE = 30;
+  const BUTTON_CENTER_Y = BAR_TOP + 4; // 4px below bar top
+
   return (
-    <nav
-      className="relative"
-      style={{ height: H, marginTop: -peakY * -1 - 10 /* allow peak to extend up */ }}
-    >
-      {/* Bar + bump shape — single filled path, full orgColor. */}
+    <nav className="relative" style={{ height: NAV_H }}>
+      {/* Bar + bump — single filled path, full orgColor. */}
       <svg
-        viewBox={`0 ${peakY} ${W} ${H - peakY}`}
+        viewBox={`0 0 ${W} ${NAV_H}`}
         preserveAspectRatio="none"
-        className="absolute inset-x-0 bottom-0 h-[58px] w-full"
+        className="absolute inset-0 h-full w-full"
       >
         <path d={path} fill={orgColor} />
       </svg>
 
-      {/* Tab items */}
-      <div className="relative flex h-full items-end justify-around px-2 pb-1 text-white">
+      {/* Tab items — pinned to the bottom (only in the bar area) */}
+      <div
+        className="absolute inset-x-0 bottom-0 flex items-end justify-around px-2 pb-1 text-white"
+        style={{ height: BAR_H }}
+      >
         <TabItem
           mainIcon="/icons/track_tab_main.png"
           lineIcon="/icons/track_tab_main_line.png"
@@ -534,24 +543,25 @@ function TabBar({ org }: { org: Org }) {
         <TabItem profile label="Profile" />
       </div>
 
-      {/* Center NFC scan button — sits mostly INSIDE the bar (iOS:
-          offset = -barHeight/15 ≈ 7px up). Full orgColor, dual shadow. */}
-      <div className="absolute left-1/2 top-[2px] z-10 -translate-x-1/2 -translate-y-[40%]">
-        <div
-          className="flex h-[28px] w-[28px] items-center justify-center rounded-full"
-          style={{
-            backgroundColor: orgColor,
-            boxShadow:
-              "1.2px 1.2px 2px rgba(0,0,0,0.25), -1.2px -1.2px 2px rgba(255,255,255,0.10)",
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/redprint-emblem.png"
-            alt="Redprint"
-            className="h-[55%] w-[55%]"
-          />
-        </div>
+      {/* Center NFC scan button — full orgColor, sits on the bump. */}
+      <div
+        className="absolute z-10 flex items-center justify-center rounded-full"
+        style={{
+          left: CX - BUTTON_SIZE / 2,
+          top: BUTTON_CENTER_Y - BUTTON_SIZE / 2,
+          width: BUTTON_SIZE,
+          height: BUTTON_SIZE,
+          backgroundColor: orgColor,
+          boxShadow:
+            "1.2px 1.2px 2px rgba(0,0,0,0.25), -1.2px -1.2px 2px rgba(255,255,255,0.10)",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logos/redprint-emblem.png"
+          alt="Redprint"
+          className="h-[60%] w-[60%]"
+        />
       </div>
     </nav>
   );
