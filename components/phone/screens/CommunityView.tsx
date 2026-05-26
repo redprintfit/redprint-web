@@ -481,7 +481,7 @@ function TabBar({ org }: { org: Org }) {
   // tab .padding(.bottom, 40). Scale factor 0.55 for our phone size.
   const W = 260;
   const BAR_H = 60; // bar (bottom portion of nav)
-  const PEAK_H = 22; // bump extends this far above bar top (room for button)
+  const PEAK_H = 14; // bump extends this far above bar top
   const NAV_H = BAR_H + PEAK_H;
   const HALF_W = 44; // bump half-width — slightly wider than button
   const CX = W / 2;
@@ -501,10 +501,10 @@ function TabBar({ org }: { org: Org }) {
     Z
   `;
 
-  // NFC button — visually centered on the bump. ~35% protrudes above
-  // the bar's top edge, 65% sits inside the bar.
+  // NFC button — mostly inside bar, top ~15% protrudes above bar top.
+  // Matches iOS button center = barH/2 - barH/15 below bar top.
   const BUTTON_SIZE = 46;
-  const BUTTON_CENTER_Y = BAR_TOP + 7; // 7px below bar top → 16px above
+  const BUTTON_CENTER_Y = BAR_TOP + BAR_H * 0.27;
 
   return (
     <nav className="relative" style={{ height: NAV_H }}>
@@ -547,17 +547,18 @@ function TabBar({ org }: { org: Org }) {
         <TabItem profile label="Profile" />
       </div>
 
-      {/* Center NFC scan button — same orgColor as bar; shadow halo only. */}
+      {/* Center NFC scan button — same orgColor as bar; shadow halo only.
+          left:50% + translateX so it co-centers with the SVG bump regardless
+          of the actual rendered width (SVG stretches via preserveAspectRatio). */}
       <div
         className="absolute z-10 flex items-center justify-center rounded-full"
         style={{
-          left: CX - BUTTON_SIZE / 2,
+          left: "50%",
           top: BUTTON_CENTER_Y - BUTTON_SIZE / 2,
+          transform: "translateX(-50%)",
           width: BUTTON_SIZE,
           height: BUTTON_SIZE,
           backgroundColor: orgColor,
-          // Slightly stronger shadow than before so the button reads even
-          // when it color-matches the bar.
           boxShadow:
             "1.5px 1.5px 3px rgba(0,0,0,0.35), -1.5px -1.5px 3px rgba(255,255,255,0.15)",
         }}
