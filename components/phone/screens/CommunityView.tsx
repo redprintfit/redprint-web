@@ -165,7 +165,7 @@ export function CommunityView({ org }: { org: Org }) {
         </div>
 
         {/* 4th and 5th rows */}
-        <div className="relative mt-2 space-y-1.5 pb-6">
+        <div className="relative mt-2 space-y-1.5 pb-2">
           {STATIC_LEADERBOARD.rows.map((row, i) => (
             <BottomRow key={row.shortName} rank={i + 4} org={row} />
           ))}
@@ -173,7 +173,7 @@ export function CommunityView({ org }: { org: Org }) {
       </section>
 
       {/* ---------- Activity feed (rounded top, offset -y from leaderboard) ---------- */}
-      <section className="light:bg-white relative mt-3 flex-1 overflow-hidden rounded-t-2xl bg-black px-2 pb-1 pt-1.5">
+      <section className="light:bg-white relative mt-1 flex-1 overflow-hidden rounded-t-2xl bg-black px-2 pb-1 pt-1">
         <div className="light:text-black/55 px-1.5 pb-1.5 text-[8.5px] font-semibold text-white/50">
           Activity at {org.name}
         </div>
