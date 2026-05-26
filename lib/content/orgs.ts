@@ -33,7 +33,7 @@ export const orgs: Org[] = [
     id: "csun",
     name: "CSUN",
     shortName: "CS",
-    primaryColor: "#000000", // black (first in brandingColors order)
+    primaryColor: "#d01c2e", // csunCG2 (secondary; primary is .black)
     logoSrc: "/logos/csun.png",
   },
   {
