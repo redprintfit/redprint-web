@@ -155,8 +155,9 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
 
         {/* ---------- Video carousel ---------- */}
         {/* items-start so the explicit aspect ratio isn't overridden by
-            the parent flex-col stretch (which was making them too tall). */}
-        <div className="mt-2 flex items-start gap-1 overflow-hidden px-2">
+            the parent flex-col stretch. py-1.5 gives the active thumb's
+            outset box-shadow room to render without being clipped. */}
+        <div className="mt-1 flex items-start gap-1 px-2 py-1.5">
           <VideoThumb src="/screens/exercise-thumb-1.png" />
           <VideoThumb src="/screens/exercise-video-hero.png" active />
           <VideoThumb src="/screens/exercise-thumb-2.png" />
