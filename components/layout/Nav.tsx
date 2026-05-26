@@ -30,8 +30,14 @@ export function Nav() {
         />
       </Link>
 
-      {/* Top-right: theme toggle */}
-      <div className="pointer-events-auto">
+      {/* Top-right: Sign in CTA + theme toggle */}
+      <div className="pointer-events-auto flex items-center gap-3">
+        <Link
+          href="/signin"
+          className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition"
+        >
+          Sign in
+        </Link>
         <ThemeToggle />
       </div>
     </nav>
