@@ -1,4 +1,7 @@
+"use client";
+
 import { darken, lighten, type Org } from "@/lib/content/orgs";
+import { useTheme } from "@/lib/useTheme";
 
 /* ---------- Brand color tokens from iOS ColorExtension.swift ---------- */
 const REDPRINT_BLUE = "rgb(10, 125, 250)";
@@ -23,48 +26,65 @@ export function HomeWorkoutView({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
   const orgDark65 = darken(orgColor, 65);
   const orgLight60 = lighten(orgColor, 60);
+  const isDark = useTheme() === "dark";
+
+  // iOS workout-info card flips formula:
+  //   dark -> lighten(orgColor, 60%) — soft peach/pink against dark bg
+  //   light -> darken(orgColor, 65%) — deep, saturated org color on cream
+  // Label color inverts to keep contrast.
+  const infoCardBg = isDark ? orgLight60 : darken(orgColor, 65);
+  const infoLabelColor = isDark ? "#1a1a1a" : "#ffffff";
 
   return (
     <div
-      className="relative flex h-full flex-col overflow-hidden text-white"
+      className="light:text-black relative flex h-full flex-col overflow-hidden bg-black text-white"
       style={{
-        backgroundColor: "#000",
         backgroundImage: `linear-gradient(180deg, ${orgDark65}40 0%, ${orgDark65}1f 100%)`,
       }}
     >
+      <div className="light:bg-white absolute inset-0 -z-10" />
+
       <div className="flex-1 overflow-hidden px-2 pt-7">
-        {/* ---------- Workout info card (peach/pink, lighten(org, 60%)) ---------- */}
+        {/* ---------- Workout info card ---------- */}
         <div
           className="rounded-[14px] px-1.5 pb-1.5 pt-1.5"
-          style={{ backgroundColor: orgLight60 }}
+          style={{ backgroundColor: infoCardBg, color: infoLabelColor }}
         >
           {/* Name + timer row */}
           <div className="flex items-center gap-1.5 px-0.5">
             <div
               className="h-[26px] w-[26px] flex-shrink-0 rounded-full border bg-zinc-700"
-              style={{ borderColor: "rgba(0,0,0,0.2)" }}
+              style={{ borderColor: `${infoLabelColor}33` }}
             />
             <div
-              className="flex-1 text-[10px] font-bold leading-tight text-black"
+              className="flex-1 text-[10px] font-bold leading-tight"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
               Chest Power Session
             </div>
-            <div className="text-[8.5px] font-semibold text-black/65">
+            <div
+              className="text-[8.5px] font-semibold"
+              style={{ color: `${infoLabelColor}a6` }}
+            >
               00:00:06
             </div>
-            <button className="px-1 text-[10px] text-black/80">✕</button>
+            <button className="px-1 text-[10px]" style={{ color: infoLabelColor }}>
+              ✕
+            </button>
           </div>
 
           {/* Stats row */}
           <div className="mt-1.5 flex gap-1">
-            <InfoStatCell value="21.9k" unit="lbs" icon={<Dumbbell />} />
-            <InfoStatCell value="23" unit="sets" icon={<Refresh />} />
-            <InfoStatCell value="11.5" unit="reps" icon={<Divide />} />
+            <InfoStatCell value="21.9k" unit="lbs" icon={<Dumbbell />} labelColor={infoLabelColor} />
+            <InfoStatCell value="23" unit="sets" icon={<Refresh />} labelColor={infoLabelColor} />
+            <InfoStatCell value="11.5" unit="reps" icon={<Divide />} labelColor={infoLabelColor} />
           </div>
 
           {/* Chevron */}
-          <div className="mt-0.5 flex justify-center pb-0.5 text-black/50">
+          <div
+            className="mt-0.5 flex justify-center pb-0.5"
+            style={{ color: `${infoLabelColor}80` }}
+          >
             <ChevronDown />
           </div>
         </div>
@@ -82,16 +102,13 @@ export function HomeWorkoutView({ org }: { org: Org }) {
             Exercises
             <span> (7)</span>
           </div>
-          <button
-            className="rounded-[5px] border px-1.5 py-0.5 text-[7.5px] font-semibold"
-            style={{ borderColor: "rgba(255,255,255,0.25)" }}
-          >
+          <button className="border-fg-base/25 rounded-[5px] border px-1.5 py-0.5 text-[7.5px] font-semibold">
             Collapse all
           </button>
         </div>
 
         {/* ---------- Expanded exercise card (Barbell Bench Press) ---------- */}
-        <ExerciseCard org={org} orgDark65={orgDark65} />
+        <ExerciseCard org={org} orgDark65={orgDark65} isDark={isDark} />
       </div>
 
       {/* ---------- Floating NFC cluster button (peeks at bottom) ---------- */}
@@ -120,29 +137,34 @@ function InfoStatCell({
   value,
   unit,
   icon,
+  labelColor,
 }: {
   value: string;
   unit: string;
   icon: React.ReactNode;
+  labelColor: string;
 }) {
   return (
     <div
       className="flex flex-1 items-end justify-between rounded-[8px] px-1.5 py-1"
       style={{
-        backgroundColor: "rgba(0,0,0,0.12)",
-        border: "1px solid rgba(0,0,0,0.2)",
+        backgroundColor: `${labelColor}1F`,
+        border: `1px solid ${labelColor}33`,
+        color: labelColor,
       }}
     >
-      <div className="flex items-baseline gap-0.5 text-black">
+      <div className="flex items-baseline gap-0.5">
         <span
           className="text-[12px] leading-none"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
           {value}
         </span>
-        <span className="text-[6.5px] text-black/50">{unit}</span>
+        <span className="text-[6.5px]" style={{ color: `${labelColor}80` }}>
+          {unit}
+        </span>
       </div>
-      <span className="text-black/45">{icon}</span>
+      <span style={{ color: `${labelColor}73` }}>{icon}</span>
     </div>
   );
 }
@@ -219,19 +241,33 @@ function WrenchButton() {
    Exercise card (expanded)
    ============================================================ */
 
-function ExerciseCard({ org, orgDark65 }: { org: Org; orgDark65: string }) {
+function ExerciseCard({
+  org,
+  orgDark65,
+  isDark,
+}: {
+  org: Org;
+  orgDark65: string;
+  isDark: boolean;
+}) {
+  // iOS pageBackground(for: orgColor) — dark uses darken@40% opacity, light
+  // uses a much lighter wash so the card reads on cream.
+  const cardBg = isDark
+    ? `${orgDark65}66`
+    : `${darken(org.primaryColor, 50)}18`;
+
   return (
     <div
-      className="mt-1.5 rounded-t-[18px] rounded-b-[11px] px-1.5 pt-2"
+      className="light:text-black mt-1.5 rounded-t-[18px] rounded-b-[11px] px-1.5 pt-2 text-white"
       style={{
-        backgroundColor: `${orgDark65}66`,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+        backgroundColor: cardBg,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
       }}
     >
       {/* Top: name + chevron */}
       <div className="flex items-start justify-between px-1">
         <span
-          className="text-[14px] leading-tight text-white"
+          className="text-[14px] leading-tight"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
           Barbell Bench Press
@@ -334,12 +370,14 @@ function StatCell({ value, subtitle }: { value: string; subtitle: string }) {
   return (
     <div className="flex flex-col items-center">
       <span
-        className="text-[12px] text-white"
+        className="light:text-black text-[12px] text-white"
         style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
       >
         {value}
       </span>
-      <span className="text-[6.5px] text-white/50">{subtitle}</span>
+      <span className="light:text-black/50 text-[6.5px] text-white/50">
+        {subtitle}
+      </span>
     </div>
   );
 }
@@ -365,7 +403,7 @@ function SetRow({
         }}
       >
         <span
-          className="text-[10px] leading-none text-white"
+          className="light:text-black text-[10px] leading-none text-white"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
         >
           {num}
@@ -382,15 +420,15 @@ function SetRow({
 
       {/* Reps cell */}
       <div
-        className="flex h-[24px] flex-1 items-center justify-center rounded-[5px]"
-        style={{
-          backgroundColor: lastImported
-            ? `${REDPRINT_BLUE}14`
-            : "rgba(255,255,255,0.04)",
-        }}
+        className={`flex h-[24px] flex-1 items-center justify-center rounded-[5px] ${
+          lastImported ? "" : "light:bg-black/[0.04] bg-white/[0.04]"
+        }`}
+        style={
+          lastImported ? { backgroundColor: `${REDPRINT_BLUE}14` } : undefined
+        }
       >
         <span
-          className="text-[12px] text-white"
+          className="light:text-black text-[12px] text-white"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
           {reps}
@@ -399,26 +437,28 @@ function SetRow({
 
       {/* Weight cell */}
       <div
-        className="relative flex h-[24px] flex-1 items-center justify-center rounded-[5px]"
-        style={{
-          backgroundColor: lastImported
-            ? `${REDPRINT_BLUE}14`
-            : "rgba(255,255,255,0.04)",
-        }}
+        className={`relative flex h-[24px] flex-1 items-center justify-center rounded-[5px] ${
+          lastImported ? "" : "light:bg-black/[0.04] bg-white/[0.04]"
+        }`}
+        style={
+          lastImported ? { backgroundColor: `${REDPRINT_BLUE}14` } : undefined
+        }
       >
         <span
-          className="text-[12px] text-white"
+          className="light:text-black text-[12px] text-white"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
           {weight}
         </span>
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[5.5px] text-white/50">
+        <span className="light:text-black/50 absolute right-1 top-1/2 -translate-y-1/2 text-[5.5px] text-white/50">
           lbs
         </span>
       </div>
 
       {/* Delete */}
-      <button className="w-[14px] text-[9px] text-white/55">✕</button>
+      <button className="light:text-black/55 w-[14px] text-[9px] text-white/55">
+        ✕
+      </button>
     </div>
   );
 }

@@ -6,18 +6,18 @@ import { type Org } from "@/lib/content/orgs";
  */
 export function ExerciseHistoryAnalysisView(_props: { org: Org }) {
   return (
-    <div className="flex h-full flex-col bg-black px-2.5 pb-2 pt-7 text-white">
+    <div className="light:bg-white light:text-black flex h-full flex-col bg-black px-2.5 pb-2 pt-7 text-white">
       {/* Header */}
       <div className="flex items-start gap-1.5">
         <div className="mt-0.5 text-[16px] leading-none">📍</div>
         <div className="flex-1 text-[11px] font-bold leading-tight">
           Exercise Progression
         </div>
-        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[7px]">
+        <div className="flex h-4 w-4 items-center justify-center rounded-full light:bg-black/10 bg-white/10 text-[7px]">
           ✕
         </div>
       </div>
-      <p className="mt-1 text-[8px] leading-tight text-white/70">
+      <p className="mt-1 text-[8px] leading-tight light:text-black/70 text-white/70">
         Compare exercises over time and track your personal records.
       </p>
 
@@ -39,24 +39,24 @@ export function ExerciseHistoryAnalysisView(_props: { org: Org }) {
 
       {/* Chart */}
       <div className="mt-1 flex-1 overflow-hidden">
-        <div className="text-[7px] text-white/40">Volume (lbs)</div>
+        <div className="text-[7px] light:text-black/40 text-white/40">Volume (lbs)</div>
         <Chart />
       </div>
 
       {/* Pagination */}
-      <div className="mt-1 flex items-center justify-center gap-2 text-[7.5px] text-white/60">
-        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10">
+      <div className="mt-1 flex items-center justify-center gap-2 text-[7.5px] light:text-black/60 text-white/60">
+        <span className="flex h-4 w-4 items-center justify-center rounded-full light:bg-black/10 bg-white/10">
           ‹
         </span>
         <span>79–88 of 88</span>
-        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10">
+        <span className="flex h-4 w-4 items-center justify-center rounded-full light:bg-black/10 bg-white/10">
           ›
         </span>
       </div>
 
       {/* Table */}
       <div className="mt-1">
-        <div className="grid grid-cols-[1.4fr_1fr_0.7fr_0.9fr_0.9fr] gap-1 border-b border-white/10 px-1 pb-0.5 text-[6.5px] text-white/40">
+        <div className="grid grid-cols-[1.4fr_1fr_0.7fr_0.9fr_0.9fr] gap-1 border-b light:border-black/10 light:border-black/10 border-white/10 px-1 pb-0.5 text-[6.5px] light:text-black/40 text-white/40">
           <span>Exercise</span>
           <span className="text-right">Volume</span>
           <span className="text-right">Sets</span>
@@ -104,24 +104,24 @@ function StatCard({
   icon: string;
 }) {
   return (
-    <div className="flex-1 rounded-md border border-white/10 p-1.5">
+    <div className="flex-1 rounded-md border light:border-black/10 light:border-black/10 border-white/10 p-1.5">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] font-bold">
           {value}
-          {unit && <span className="text-[7px] text-white/50"> {unit}</span>}
+          {unit && <span className="text-[7px] light:text-black/50 text-white/50"> {unit}</span>}
         </span>
-        <span className="text-[7px] text-white/40">{icon}</span>
+        <span className="text-[7px] light:text-black/40 text-white/40">{icon}</span>
       </div>
-      <div className="text-[6.5px] text-white/50">{label}</div>
+      <div className="text-[6.5px] light:text-black/50 text-white/50">{label}</div>
     </div>
   );
 }
 
 function Selector({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-1 rounded-md bg-white/8 px-1.5 py-0.5 text-[7.5px]">
+    <div className="flex items-center gap-1 rounded-md light:bg-black/8 bg-white/8 px-1.5 py-0.5 text-[7.5px]">
       {label}
-      <span className="text-white/50">⇅</span>
+      <span className="light:text-black/50 text-white/50">⇅</span>
     </div>
   );
 }
@@ -176,14 +176,16 @@ function Chart() {
               y1={y}
               x2="200"
               y2={y}
-              stroke="rgba(255,255,255,0.06)"
+              stroke="currentColor"
+              strokeOpacity="0.1"
               strokeWidth="0.5"
             />
             <text
               x="-3"
               y={y + 2}
               textAnchor="end"
-              fill="rgba(255,255,255,0.4)"
+              fill="currentColor"
+              fillOpacity="0.5"
               fontSize="5"
             >
               {v === 0 ? "0" : `${v / 1000},000`}
@@ -227,7 +229,8 @@ function Chart() {
           x={20 + i * 50}
           y="110"
           textAnchor="middle"
-          fill="rgba(255,255,255,0.4)"
+          fill="currentColor"
+              fillOpacity="0.5"
           fontSize="5"
         >
           {n}
@@ -253,20 +256,20 @@ function TableRow({
   orm: string;
 }) {
   return (
-    <div className="grid grid-cols-[1.4fr_1fr_0.7fr_0.9fr_0.9fr] items-center gap-1 border-b border-white/5 px-1 py-0.5 text-[7.5px]">
+    <div className="grid grid-cols-[1.4fr_1fr_0.7fr_0.9fr_0.9fr] items-center gap-1 border-b light:border-black/5 border-white/5 px-1 py-0.5 text-[7.5px]">
       <div className="flex items-center gap-1">
         <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
         <span>{name}</span>
       </div>
       <span className="text-right">
         {volume}
-        <span className="text-[5.5px] text-white/40"> lbs</span>
+        <span className="text-[5.5px] light:text-black/40 text-white/40"> lbs</span>
       </span>
       <span className="text-right">{sets}</span>
       <span className="text-right">{reps}</span>
       <span className="text-right">
         {orm}
-        <span className="text-[5.5px] text-white/40"> lbs</span>
+        <span className="text-[5.5px] light:text-black/40 text-white/40"> lbs</span>
       </span>
     </div>
   );

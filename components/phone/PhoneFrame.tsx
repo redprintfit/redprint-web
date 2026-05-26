@@ -3,9 +3,13 @@ import { cn } from "@/lib/utils";
 type Props = {
   children: React.ReactNode;
   className?: string;
-  /** Status bar tint (text/icons). Defaults to light. */
+  /**
+   * Forces the status-bar text color regardless of theme.
+   * Leave unset to let it follow the marketing site theme
+   * (white in dark, black in light).
+   */
   variant?: "light" | "dark";
-  /** Background of the screen interior. Defaults to neutral-950. */
+  /** Background of the screen interior. Defaults to black->white per theme. */
   screenBg?: string;
 };
 
@@ -16,8 +20,8 @@ type Props = {
 export function PhoneFrame({
   children,
   className,
-  variant = "light",
-  screenBg = "bg-black",
+  variant,
+  screenBg = "bg-black light:bg-white",
 }: Props) {
   return (
     <div
@@ -36,7 +40,11 @@ export function PhoneFrame({
         <div
           className={cn(
             "pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 pt-[6px] text-[8.5px] font-semibold",
-            variant === "light" ? "text-white" : "text-black",
+            variant === "light"
+              ? "text-white"
+              : variant === "dark"
+                ? "text-black"
+                : "text-white light:text-black",
           )}
         >
           <span className="tracking-tight">3:48</span>

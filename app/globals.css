@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Tailwind v4 custom variant: prefix with `light:` to apply styles only
+   when the active theme is light. Used by phone screens to flip dark
+   defaults (black bg, white text) to light values. */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 @theme {
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 

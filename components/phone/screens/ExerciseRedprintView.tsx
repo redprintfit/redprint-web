@@ -6,7 +6,7 @@ import { type Org } from "@/lib/content/orgs";
  */
 export function ExerciseRedprintView(_props: { org: Org }) {
   return (
-    <div className="flex h-full flex-col bg-black">
+    <div className="light:bg-white flex h-full flex-col bg-black">
       {/* Video / image hero (placeholder gradient stands in for the gym video) */}
       <div
         className="relative flex-1"
@@ -27,27 +27,27 @@ export function ExerciseRedprintView(_props: { org: Org }) {
       </div>
 
       {/* Bottom sheet */}
-      <div className="rounded-t-2xl bg-[#1c0d0e] px-2.5 pb-3 pt-1.5">
+      <div className="light:bg-[#fdf6f0] rounded-t-2xl bg-[#1c0d0e] px-2.5 pb-3 pt-1.5">
         {/* Drag indicator */}
-        <div className="mx-auto h-[3px] w-7 rounded-full bg-white/30" />
+        <div className="light:bg-black/25 mx-auto h-[3px] w-7 rounded-full bg-white/30" />
 
         {/* Title row */}
         <div className="mt-2 flex items-center gap-1.5">
-          <div className="text-[10px] text-white/70">‹</div>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
+          <div className="light:text-black/70 text-[10px] text-white/70">‹</div>
+          <div className="light:bg-black/10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
             <div className="h-5 w-5 rounded-full bg-[#7B4F2C]" />
           </div>
-          <div className="flex-1 text-[11px] font-bold text-white">
+          <div className="light:text-black flex-1 text-[11px] font-bold text-white">
             Glute Drive
           </div>
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[8px] text-white/70">
+          <div className="light:bg-black/10 light:text-black/70 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[8px] text-white/70">
             ✕
           </div>
         </div>
 
         {/* Action row */}
         <div className="mt-2 flex items-center gap-1">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white/8 text-[9px]">
+          <div className="light:bg-black/8 light:text-black flex h-7 w-7 items-center justify-center rounded-md bg-white/8 text-[9px]">
             ♡
           </div>
           <div className="flex h-7 flex-1 items-center justify-between rounded-md bg-[#b91c2e] px-2 text-[8px] font-bold leading-tight text-white">
@@ -76,7 +76,7 @@ export function ExerciseRedprintView(_props: { org: Org }) {
           <VideoThumb />
         </div>
 
-        <div className="mt-1.5 text-center text-[7px] text-white/40">
+        <div className="light:text-black/40 mt-1.5 text-center text-[7px] text-white/40">
           Swipe up for more info ⌃
         </div>
       </div>

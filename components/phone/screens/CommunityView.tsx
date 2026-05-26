@@ -1,4 +1,7 @@
+"use client";
+
 import { darken, type Org } from "@/lib/content/orgs";
+import { useTheme } from "@/lib/useTheme";
 
 /* ---------- Brand color tokens from iOS ColorExtension.swift ---------- */
 const REDPRINT_GREEN = "rgb(0, 210, 85)";
@@ -74,19 +77,21 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
 export function CommunityView({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
   const orgDark65 = darken(orgColor, 65);
+  const orgDark50 = darken(orgColor, 50);
   const orgDark75 = darken(orgColor, 75);
+  const isDark = useTheme() === "dark";
+
+  // Page tint opacity mirrors iOS: 25% dark, 10% light.
+  const pageTintAlpha = isDark ? "40" : "1A";
 
   return (
     <div
-      className="flex h-full flex-col bg-black text-white"
+      className="light:bg-white light:text-black flex h-full flex-col bg-black text-white"
       style={{
-        // Page background: gradient at top + base tint. Mirrors the
-        // ZStack background in CommunityView.swift.
         background: `
-          linear-gradient(180deg, ${orgDark65}40 0%, transparent 50%),
-          ${orgDark65}25
+          linear-gradient(180deg, ${orgDark65}${pageTintAlpha} 0%, transparent 50%),
+          ${orgDark65}${pageTintAlpha}
         `,
-        backgroundColor: "#000",
       }}
     >
       {/* ---------- Header (pt-7 reserves the status bar) ---------- */}
@@ -95,15 +100,16 @@ export function CommunityView({ org }: { org: Org }) {
           <QuestionMarkCircle />
         </IconButton>
 
-        <div className="flex h-[26px] flex-1 items-center gap-1 rounded-full bg-black px-2 shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+        <div className="light:bg-white flex h-[26px] flex-1 items-center gap-1 rounded-full bg-black px-2 shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
           <MagnifyingGlass />
-          <span className="text-[8.5px] text-white/35">Search people…</span>
+          <span className="light:text-black/45 text-[8.5px] text-white/35">
+            Search people…
+          </span>
         </div>
 
         <button
-          className="flex h-[26px] items-center gap-1 rounded-full px-2 shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+          className="light:bg-white flex h-[26px] items-center gap-1 rounded-full bg-black px-2 shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
           style={{
-            backgroundColor: "#000",
             boxShadow: `inset 0 0 0 999px ${REDPRINT_GREEN}40`,
           }}
         >
@@ -162,23 +168,17 @@ export function CommunityView({ org }: { org: Org }) {
       </section>
 
       {/* ---------- Activity feed (rounded top, offset -y from leaderboard) ---------- */}
-      <section
-        className="relative mt-3 flex-1 overflow-hidden rounded-t-2xl bg-black px-2 pb-1 pt-1.5"
-        style={{
-          // Subtle white-to-clear top gradient (matches iOS gradient that
-          // softens the seam from the leaderboard section above).
-          backgroundImage:
-            "linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 100%)",
-        }}
-      >
-        <div className="px-1.5 pb-1.5 text-[8.5px] font-semibold text-white/50">
+      <section className="light:bg-white relative mt-3 flex-1 overflow-hidden rounded-t-2xl bg-black px-2 pb-1 pt-1.5">
+        <div className="light:text-black/55 px-1.5 pb-1.5 text-[8.5px] font-semibold text-white/50">
           Activity at {org.name}
         </div>
 
         <div className="space-y-1.5">
           <WorkoutPostCard
             org={org}
+            isDark={isDark}
             orgDark65={orgDark65}
+            orgDark50={orgDark50}
             orgDark75={orgDark75}
             title="Untitled workout"
             titleIsItalic
@@ -189,7 +189,9 @@ export function CommunityView({ org }: { org: Org }) {
 
           <WorkoutPostCard
             org={org}
+            isDark={isDark}
             orgDark65={orgDark65}
+            orgDark50={orgDark50}
             orgDark75={orgDark75}
             title="Push"
             subType="pre-planned"
@@ -223,16 +225,15 @@ function PodiumCell({
 }) {
   return (
     <div
-      className="relative flex w-[58px] flex-col items-center rounded-[10px] pb-1.5 pt-2"
+      className="light:bg-white relative flex w-[58px] flex-col items-center rounded-[10px] bg-black pb-1.5 pt-2"
       style={{
-        background: "rgba(0,0,0,0.7)",
         borderTopLeftRadius: 60,
         borderTopRightRadius: 60,
         boxShadow: isMyGym
-          ? `inset 0 0 0 1.5px ${REDPRINT_GREEN}, 0 1px 3px rgba(0,0,0,0.4)`
-          : "0 1px 3px rgba(0,0,0,0.4)",
+          ? `inset 0 0 0 1.5px ${REDPRINT_GREEN}, 0 1px 3px rgba(0,0,0,0.25)`
+          : "0 1px 3px rgba(0,0,0,0.25)",
         ...(isMyGym && {
-          backgroundImage: `linear-gradient(180deg, ${REDPRINT_GREEN}30 0%, rgba(0,0,0,0.7) 100%)`,
+          backgroundImage: `linear-gradient(180deg, ${REDPRINT_GREEN}30 0%, transparent 100%)`,
         }),
       }}
     >
@@ -276,12 +277,12 @@ function PodiumCell({
 
       {/* Org name */}
       <div
-        className="mt-1 text-center text-[8px] leading-tight"
+        className="light:text-black mt-1 text-center text-[8px] leading-tight text-white"
         style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
       >
         {org.name}
       </div>
-      <div className="text-center text-[6px] leading-tight text-white/65">
+      <div className="light:text-black/65 text-center text-[6px] leading-tight text-white/65">
         {org.location}
       </div>
 
@@ -301,13 +302,13 @@ function PodiumCell({
 
       {/* Points behind */}
       {org.pointsBehind && (
-        <div className="mt-1 flex items-baseline gap-0.5 text-[8px]">
+        <div className="light:text-black mt-1 flex items-baseline gap-0.5 text-[8px] text-white">
           <span
             style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
           >
             {org.pointsBehind}
           </span>
-          <span className="text-[6px] text-white/50">lbs</span>
+          <span className="light:text-black/50 text-[6px] text-white/50">lbs</span>
         </div>
       )}
     </div>
@@ -316,12 +317,9 @@ function PodiumCell({
 
 function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
   return (
-    <div
-      className="flex items-center gap-2 rounded-[10px] px-2 py-1"
-      style={{ background: "rgba(0,0,0,0.7)", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }}
-    >
+    <div className="light:bg-white light:text-black flex items-center gap-2 rounded-[10px] bg-black px-2 py-1 text-white shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
       <span
-        className="w-3 text-center text-[9px] text-white/90"
+        className="light:text-black/90 w-3 text-center text-[9px] text-white/90"
         style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
       >
         {rank}
@@ -350,18 +348,18 @@ function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
         >
           {org.name}
         </span>
-        <span className="truncate text-[6.5px] text-white/50">
+        <span className="light:text-black/50 truncate text-[6.5px] text-white/50">
           {org.location}
         </span>
       </div>
       <div className="flex items-baseline gap-0.5">
         <span
-          className="text-[9px] text-white"
+          className="light:text-black text-[9px] text-white"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
         >
           {org.pointsBehind}
         </span>
-        <span className="text-[6.5px] text-white/50">lbs</span>
+        <span className="light:text-black/50 text-[6.5px] text-white/50">lbs</span>
       </div>
     </div>
   );
@@ -369,7 +367,9 @@ function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
 
 function WorkoutPostCard({
   org,
+  isDark,
   orgDark65,
+  orgDark50,
   orgDark75,
   title,
   titleIsItalic,
@@ -378,7 +378,9 @@ function WorkoutPostCard({
   username,
 }: {
   org: Org;
+  isDark: boolean;
   orgDark65: string;
+  orgDark50: string;
   orgDark75: string;
   title: string;
   titleIsItalic?: boolean;
@@ -386,12 +388,17 @@ function WorkoutPostCard({
   showFooter: boolean;
   username?: string;
 }) {
+  // iOS post card: dark=darken65@25%, light=darken50@8%
+  const cardBg = isDark ? `${orgDark65}40` : `${orgDark50}14`;
+  // Inner footer:  dark=darken75@30%, light=darken50@26% (a bit darker so divider reads)
+  const footerBg = isDark ? `${orgDark75}50` : `${orgDark50}26`;
+
   return (
     <div
       className="overflow-hidden rounded-[14px]"
       style={{
-        backgroundColor: `${orgDark65}40`,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+        backgroundColor: cardBg,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
       }}
     >
       {/* Content (icon + headline + subtype + featured) */}
@@ -410,7 +417,7 @@ function WorkoutPostCard({
 
           {/* Subheadline */}
           <div
-            className={`text-[11px] leading-tight ${titleIsItalic ? "italic" : ""}`}
+            className={`light:text-black text-[11px] leading-tight text-white ${titleIsItalic ? "italic" : ""}`}
             style={{
               fontFamily: "Outfit, sans-serif",
               fontWeight: 700,
@@ -421,7 +428,7 @@ function WorkoutPostCard({
           </div>
 
           {/* Sub-type row */}
-          <div className="mt-0.5 flex items-center gap-1 text-[7px] text-white/65">
+          <div className="light:text-black/65 mt-0.5 flex items-center gap-1 text-[7px] text-white/65">
             {subType === "self-tracked" ? <Radio /> : <CheckSquare />}
             <span>
               {subType === "self-tracked" ? "Self-tracked" : "Pre-planned"}
@@ -436,14 +443,16 @@ function WorkoutPostCard({
           <MuscleDot />
         </div>
 
-        <span className="text-[10px] leading-none text-white/40">›</span>
+        <span className="light:text-black/40 text-[10px] leading-none text-white/40">
+          ›
+        </span>
       </div>
 
       {/* Footer with username + actions */}
       {showFooter && (
         <div
           className="flex items-center gap-1.5 px-2 py-1.5"
-          style={{ backgroundColor: `${orgDark75}50` }}
+          style={{ backgroundColor: footerBg }}
         >
           <div
             className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
@@ -451,8 +460,10 @@ function WorkoutPostCard({
           >
             <div className="h-1.5 w-1.5 rounded-full bg-white/80" />
           </div>
-          <span className="text-[8.5px] text-white/85">{username}</span>
-          <span className="ml-auto flex items-center gap-2 text-white/55">
+          <span className="light:text-black/85 text-[8.5px] text-white/85">
+            {username}
+          </span>
+          <span className="light:text-black/55 ml-auto flex items-center gap-2 text-white/55">
             <Heart />
             <Bubble />
             <Ellipsis />
@@ -510,7 +521,7 @@ function TabItem({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-0.5 ${active ? "text-white" : "text-white/55"}`}
+      className={`flex flex-col items-center gap-0.5 ${active ? "light:text-black text-white" : "light:text-black/55 text-white/55"}`}
     >
       <div className="h-3.5 w-3.5">
         {iconSrc ? (
