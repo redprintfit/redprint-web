@@ -88,10 +88,9 @@ export function CommunityView({ org }: { org: Org }) {
     <div
       className="light:bg-white light:text-black flex h-full flex-col bg-black text-white"
       style={{
-        background: `
-          linear-gradient(180deg, ${orgDark65}${pageTintAlpha} 0%, transparent 50%),
-          ${orgDark65}${pageTintAlpha}
-        `,
+        // Use backgroundImage (not the `background` shorthand) so the
+        // `bg-black light:bg-white` base color isn't clobbered.
+        backgroundImage: `linear-gradient(180deg, ${orgDark65}${pageTintAlpha} 0%, transparent 50%)`,
       }}
     >
       {/* ---------- Header (pt-7 reserves the status bar) ---------- */}
