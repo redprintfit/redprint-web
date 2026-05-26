@@ -449,7 +449,7 @@ function Chart({ palette }: { palette: string[] }) {
           d={toPath(s.data as [number, number][])}
           fill="none"
           stroke={s.color}
-          strokeWidth="1.4"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
