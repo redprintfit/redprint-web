@@ -1,179 +1,570 @@
-import { type Org } from "@/lib/content/orgs";
+import { darken, lighten, type Org } from "@/lib/content/orgs";
+
+/* ---------- Brand color tokens from iOS ColorExtension.swift ---------- */
+const REDPRINT_BLUE = "rgb(10, 125, 250)";
+const REDPRINT_GREEN = "rgb(0, 210, 85)";
+const REDPRINT_MID_GRAY = "rgb(176, 176, 176)";
+const REDPRINT_DARK_GRAY = "rgb(50, 50, 50)";
 
 /**
- * HomeView + workout tracking — active workout session with expandable
- * exercise card showing set details.
+ * HomeView + WorkoutTracking — active workout session.
+ * Faithful port of `workoutInfoView`, `workoutActionsView`, and the
+ * expanded `WDDRViewTracking` card from
+ * Redprint5/Views/Track Page Files/HomeView+WorkoutTracking.swift.
+ *
+ * Org-color theming (mirrors iOS usage):
+ *   - Page background          → darken(orgColor, 65%) @ 25% opacity
+ *   - Workout-info card bg     → lighten(orgColor, 60%) — produces the
+ *                                 peach/pink seen in the Swarthmore shot
+ *   - NFC cluster button       → orgColor (full)
+ *   - Set-row "Last" highlight → redprint blue (constant, not org)
  */
-export function HomeWorkoutView(_props: { org: Org }) {
+export function HomeWorkoutView({ org }: { org: Org }) {
+  const orgColor = org.primaryColor;
+  const orgDark65 = darken(orgColor, 65);
+  const orgLight60 = lighten(orgColor, 60);
+
   return (
-    <div className="flex h-full flex-col bg-black px-2.5 pb-2 pt-7 text-white">
-      {/* Workout summary card */}
-      <div className="rounded-2xl bg-[#f4c8c2] p-2 text-black">
-        <div className="flex items-center gap-1.5">
-          <div className="h-5 w-5 rounded-full bg-[#a37c52]" />
-          <div className="flex-1 text-[9.5px] font-bold">Chest Power Session</div>
-          <div className="text-[8px] font-semibold">00:00:06</div>
-          <div className="text-[9px] text-black/60">✕</div>
+    <div
+      className="relative flex h-full flex-col overflow-hidden text-white"
+      style={{
+        backgroundColor: "#000",
+        backgroundImage: `linear-gradient(180deg, ${orgDark65}40 0%, ${orgDark65}1f 100%)`,
+      }}
+    >
+      <div className="flex-1 overflow-hidden px-2 pt-7">
+        {/* ---------- Workout info card (peach/pink, lighten(org, 60%)) ---------- */}
+        <div
+          className="rounded-[14px] px-1.5 pb-1.5 pt-1.5"
+          style={{ backgroundColor: orgLight60 }}
+        >
+          {/* Name + timer row */}
+          <div className="flex items-center gap-1.5 px-0.5">
+            <div
+              className="h-[26px] w-[26px] flex-shrink-0 rounded-full border bg-zinc-700"
+              style={{ borderColor: "rgba(0,0,0,0.2)" }}
+            />
+            <div
+              className="flex-1 text-[10px] font-bold leading-tight text-black"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              Chest Power Session
+            </div>
+            <div className="text-[8.5px] font-semibold text-black/65">
+              00:00:06
+            </div>
+            <button className="px-1 text-[10px] text-black/80">✕</button>
+          </div>
+
+          {/* Stats row */}
+          <div className="mt-1.5 flex gap-1">
+            <InfoStatCell value="21.9k" unit="lbs" icon={<Dumbbell />} />
+            <InfoStatCell value="23" unit="sets" icon={<Refresh />} />
+            <InfoStatCell value="11.5" unit="reps" icon={<Divide />} />
+          </div>
+
+          {/* Chevron */}
+          <div className="mt-0.5 flex justify-center pb-0.5 text-black/50">
+            <ChevronDown />
+          </div>
         </div>
-        <div className="mt-1.5 flex items-center gap-1">
-          <Stat value="21.9k" unit="lbs" icon="🏋" />
-          <Stat value="23" unit="sets" icon="↻" />
-          <Stat value="11.5" unit="reps" icon="÷" />
+
+        {/* ---------- Action buttons row ---------- */}
+        <div className="mt-1.5 flex gap-1">
+          <FinishButton />
+          <AllExercisesButton />
+          <WrenchButton />
         </div>
-        <div className="mt-0.5 text-center text-[8px] text-black/40">⌄</div>
+
+        {/* ---------- Exercises section header ---------- */}
+        <div className="mt-2 flex items-center justify-between px-1 opacity-50">
+          <div className="text-[10px] font-semibold">
+            Exercises
+            <span> (7)</span>
+          </div>
+          <button
+            className="rounded-[5px] border px-1.5 py-0.5 text-[7.5px] font-semibold"
+            style={{ borderColor: "rgba(255,255,255,0.25)" }}
+          >
+            Collapse all
+          </button>
+        </div>
+
+        {/* ---------- Expanded exercise card (Barbell Bench Press) ---------- */}
+        <ExerciseCard org={org} orgDark65={orgDark65} />
       </div>
 
-      {/* Action buttons */}
-      <div className="mt-1.5 flex gap-1">
-        <ActionBtn bg="bg-sky-500" title="Finish" sub="Complete workout" icon="🏁" />
-        <ActionBtn bg="bg-emerald-500" title="All Exercises" sub="Browse exercise database" icon="+" />
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-zinc-700 text-[10px]">
-          🔧
-        </div>
-      </div>
-
-      {/* Exercises header */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-[9px] font-semibold">Exercises (7)</span>
-        <div className="rounded-md border border-white/15 px-1.5 py-0.5 text-[7.5px] text-white/70">
-          Collapse all
-        </div>
-      </div>
-
-      {/* First exercise card (expanded) */}
-      <div className="mt-1.5 flex-1 overflow-hidden rounded-xl bg-zinc-900/80 px-2 py-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold">Barbell Bench Press</span>
-          <span className="text-[8px] text-white/60">⌃</span>
-        </div>
-
-        {/* Action icons row */}
-        <div className="mt-1.5 flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600">
-            <span className="text-[7px] text-white">▶</span>
-          </div>
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-[7px]">
-            ✎
-          </div>
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-[7px]">
-            ⤡
-          </div>
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 text-[7px]">
-            ⋯
-          </div>
-        </div>
-
-        {/* Volume stats */}
-        <div className="mt-1.5 flex items-end justify-around text-center">
-          <div>
-            <div className="text-[10px] font-bold">4.32k</div>
-            <div className="text-[6.5px] text-white/40">Current volume</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold">3.04k</div>
-            <div className="text-[6.5px] text-white/40">Last</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold">3.34k</div>
-            <div className="text-[6.5px] text-white/40">Average</div>
-          </div>
-        </div>
-
-        {/* Sets table */}
-        <div className="mt-1.5">
-          <div className="grid grid-cols-[14px_1fr_1fr_14px] gap-1 px-1 text-center text-[6.5px] text-white/40">
-            <span />
-            <span>Repetitions</span>
-            <span>Weight</span>
-            <span />
-          </div>
-          <div className="mt-0.5 space-y-0.5">
-            <SetRow num="1" lastLabel="Last" rep="8" weight="135" highlight />
-            <SetRow num="2" lastLabel="Last" rep="8" weight="135" highlight />
-            <SetRow num="3" rep="8" weight="135" />
-            <SetRow num="4" rep="8" weight="135" />
-          </div>
-
-          <div className="mt-1 flex items-center justify-between rounded-md bg-emerald-900/40 px-2 py-1 text-[8px]">
-            <span className="text-emerald-400">Add set</span>
-            <span className="text-emerald-400">⊕</span>
-          </div>
+      {/* ---------- Floating NFC cluster button (peeks at bottom) ---------- */}
+      <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
+        <div
+          className="flex h-[44px] w-[44px] items-center justify-center rounded-full shadow-[0_2px_3px_rgba(0,0,0,0.25),0_-2px_3px_rgba(255,255,255,0.08)]"
+          style={{ backgroundColor: orgColor }}
+        >
+          <ClusterMark />
         </div>
       </div>
     </div>
   );
 }
 
-function Stat({
+/* ============================================================
+   Workout-info card
+   ============================================================ */
+
+function InfoStatCell({
   value,
   unit,
   icon,
 }: {
   value: string;
   unit: string;
-  icon: string;
+  icon: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-1 items-center justify-between rounded-md bg-white/15 px-1.5 py-1 text-[8px]">
-      <span>
-        <span className="font-bold">{value}</span> <span className="text-black/60">{unit}</span>
-      </span>
-      <span className="text-[7px] text-black/40">{icon}</span>
+    <div
+      className="flex flex-1 items-end justify-between rounded-[8px] px-1.5 py-1"
+      style={{
+        backgroundColor: "rgba(0,0,0,0.12)",
+        border: "1px solid rgba(0,0,0,0.2)",
+      }}
+    >
+      <div className="flex items-baseline gap-0.5 text-black">
+        <span
+          className="text-[12px] leading-none"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+        >
+          {value}
+        </span>
+        <span className="text-[6.5px] text-black/50">{unit}</span>
+      </div>
+      <span className="text-black/45">{icon}</span>
     </div>
   );
 }
 
-function ActionBtn({
-  bg,
-  title,
-  sub,
-  icon,
+/* ============================================================
+   Action buttons
+   ============================================================ */
+
+function FinishButton() {
+  return (
+    <button
+      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5"
+      style={{
+        background: "linear-gradient(to top right, #2563eb, #22d3ee)",
+        boxShadow: "0 3px 0 0 rgb(29, 78, 216)",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span
+          className="text-[10px] font-bold text-white"
+          style={{ fontFamily: "Outfit, sans-serif" }}
+        >
+          Finish
+        </span>
+        <CheckeredFlag />
+      </div>
+      <span className="text-[6.5px] text-white/75 leading-tight">
+        Complete workout
+      </span>
+    </button>
+  );
+}
+
+function AllExercisesButton() {
+  return (
+    <button
+      className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5"
+      style={{
+        background: "linear-gradient(to top right, #047857, #22c55e)",
+        boxShadow: "0 3px 0 0 rgb(20, 83, 45)",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span
+          className="text-[10px] font-bold text-white"
+          style={{ fontFamily: "Outfit, sans-serif" }}
+        >
+          All Exercises
+        </span>
+        <PlusIcon />
+      </div>
+      <span className="text-[6.5px] text-white/75 leading-tight">
+        Browse exercise database
+      </span>
+    </button>
+  );
+}
+
+function WrenchButton() {
+  return (
+    <button
+      className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px]"
+      style={{
+        backgroundColor: REDPRINT_MID_GRAY,
+        boxShadow: `0 3px 0 0 ${darken(REDPRINT_MID_GRAY, 25)}`,
+      }}
+    >
+      <WrenchIcon />
+    </button>
+  );
+}
+
+/* ============================================================
+   Exercise card (expanded)
+   ============================================================ */
+
+function ExerciseCard({ org, orgDark65 }: { org: Org; orgDark65: string }) {
+  return (
+    <div
+      className="mt-1.5 rounded-t-[18px] rounded-b-[11px] px-1.5 pt-2"
+      style={{
+        backgroundColor: `${orgDark65}66`,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+      }}
+    >
+      {/* Top: name + chevron */}
+      <div className="flex items-start justify-between px-1">
+        <span
+          className="text-[14px] leading-tight text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+        >
+          Barbell Bench Press
+        </span>
+        <ChevronUp />
+      </div>
+
+      {/* Action buttons row — 4 circles */}
+      <div className="mt-1.5 flex items-center justify-around">
+        <CircleActionButton color="#a855f7">
+          <PlayIcon />
+        </CircleActionButton>
+        <CircleActionButton color="#fff">
+          <PencilSquare />
+        </CircleActionButton>
+        <CircleActionButton color="#fff">
+          <ExpandIcon />
+        </CircleActionButton>
+        <CircleActionButton color="#fff" outlined>
+          <EllipsisHorizontal />
+        </CircleActionButton>
+      </div>
+
+      {/* Stats row */}
+      <div className="mt-2 grid grid-cols-3 gap-2 px-3 pb-1">
+        <StatCell value="4.32k" subtitle="Current volume" />
+        <StatCell value="3.04k" subtitle="Last" />
+        <StatCell value="3.34k" subtitle="Average" />
+      </div>
+
+      {/* Input section — set rows */}
+      <div className="space-y-1 py-1">
+        {/* Column headers (rendered as ZStack-offset labels in iOS over set 1) */}
+        <div className="flex items-center gap-1 px-0.5 pb-0.5 text-[7px] font-semibold opacity-50">
+          <div className="w-[26px]" />
+          <div className="flex-1 text-center">Repetitions</div>
+          <div className="flex-1 text-center">Weight</div>
+          <div className="w-[14px]" />
+        </div>
+
+        <SetRow num={1} lastImported reps="8" weight="135" />
+        <SetRow num={2} lastImported reps="8" weight="135" />
+        <SetRow num={3} reps="8" weight="135" />
+        <SetRow num={4} reps="8" weight="135" />
+      </div>
+
+      {/* Add set */}
+      <button
+        className="mb-1 flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-[10px] font-semibold"
+        style={{
+          color: REDPRINT_GREEN,
+        }}
+      >
+        <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}>
+          Add set
+        </span>
+        <PlusIcon color={REDPRINT_GREEN} />
+      </button>
+    </div>
+  );
+}
+
+function CircleActionButton({
+  color,
+  outlined,
+  children,
 }: {
-  bg: string;
-  title: string;
-  sub: string;
-  icon: string;
+  color: string;
+  outlined?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <div className={`flex flex-1 items-center justify-between rounded-md ${bg} px-1.5 py-1 text-white`}>
-      <div className="leading-tight">
-        <div className="text-[8.5px] font-bold">{title}</div>
-        <div className="text-[6.5px] opacity-80">{sub}</div>
-      </div>
-      <span className="text-[9px]">{icon}</span>
+    <div
+      className="flex h-[26px] w-[26px] items-center justify-center rounded-full"
+      style={{
+        backgroundColor: outlined ? "transparent" : "transparent",
+        border: outlined
+          ? "1.2px solid rgba(255,255,255,0.35)"
+          : "none",
+        color,
+      }}
+    >
+      {!outlined && (
+        <div
+          className="flex h-full w-full items-center justify-center rounded-full"
+          style={{
+            backgroundColor: color === "#a855f7" ? color : "transparent",
+            color: color === "#a855f7" ? "white" : color,
+          }}
+        >
+          {children}
+        </div>
+      )}
+      {outlined && children}
+    </div>
+  );
+}
+
+function StatCell({ value, subtitle }: { value: string; subtitle: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span
+        className="text-[12px] text-white"
+        style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
+      >
+        {value}
+      </span>
+      <span className="text-[6.5px] text-white/50">{subtitle}</span>
     </div>
   );
 }
 
 function SetRow({
   num,
-  lastLabel,
-  rep,
+  lastImported,
+  reps,
   weight,
-  highlight,
 }: {
-  num: string;
-  lastLabel?: string;
-  rep: string;
+  num: number;
+  lastImported?: boolean;
+  reps: string;
   weight: string;
-  highlight?: boolean;
 }) {
   return (
-    <div
-      className={`grid grid-cols-[14px_1fr_1fr_14px] items-center gap-1 rounded px-1 py-0.5 text-center text-[8px] ${highlight ? "bg-blue-950/60" : "bg-black/30"}`}
-    >
-      <div className="flex flex-col items-center leading-none">
-        <span className="font-bold">{num}</span>
-        {lastLabel && (
-          <span className="text-[5.5px] text-sky-400">{lastLabel}</span>
+    <div className="flex items-center gap-1 px-0.5">
+      {/* Set number cell */}
+      <div
+        className="flex h-[24px] w-[26px] flex-col items-center justify-center rounded-[5px]"
+        style={{
+          backgroundColor: lastImported ? `${REDPRINT_BLUE}33` : "transparent",
+        }}
+      >
+        <span
+          className="text-[10px] leading-none text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600 }}
+        >
+          {num}
+        </span>
+        {lastImported && (
+          <span
+            className="text-[5.5px] leading-none"
+            style={{ color: REDPRINT_BLUE }}
+          >
+            Last
+          </span>
         )}
       </div>
-      <div className="text-[9px] font-bold">{rep}</div>
-      <div className="text-[9px] font-bold">
-        {weight}
-        <span className="text-[5.5px] text-white/40"> lbs</span>
+
+      {/* Reps cell */}
+      <div
+        className="flex h-[24px] flex-1 items-center justify-center rounded-[5px]"
+        style={{
+          backgroundColor: lastImported
+            ? `${REDPRINT_BLUE}14`
+            : "rgba(255,255,255,0.04)",
+        }}
+      >
+        <span
+          className="text-[12px] text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+        >
+          {reps}
+        </span>
       </div>
-      <div className="text-[7px] text-white/40">✕</div>
+
+      {/* Weight cell */}
+      <div
+        className="relative flex h-[24px] flex-1 items-center justify-center rounded-[5px]"
+        style={{
+          backgroundColor: lastImported
+            ? `${REDPRINT_BLUE}14`
+            : "rgba(255,255,255,0.04)",
+        }}
+      >
+        <span
+          className="text-[12px] text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+        >
+          {weight}
+        </span>
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[5.5px] text-white/50">
+          lbs
+        </span>
+      </div>
+
+      {/* Delete */}
+      <button className="w-[14px] text-[9px] text-white/55">✕</button>
     </div>
+  );
+}
+
+/* ============================================================
+   Icons
+   ============================================================ */
+
+function Dumbbell() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="currentColor">
+      <rect x="0" y="6" width="2.5" height="4" rx="0.5" />
+      <rect x="3" y="4.5" width="2" height="7" rx="0.5" />
+      <rect x="5.5" y="7" width="5" height="2" rx="0.5" />
+      <rect x="11" y="4.5" width="2" height="7" rx="0.5" />
+      <rect x="13.5" y="6" width="2.5" height="4" rx="0.5" />
+    </svg>
+  );
+}
+
+function Refresh() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5 fill-none stroke-current" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M3 8 a5 5 0 0 1 9 -3" />
+      <polyline points="12,2 12,5 9,5" />
+      <path d="M13 8 a5 5 0 0 1 -9 3" />
+      <polyline points="4,14 4,11 7,11" />
+    </svg>
+  );
+}
+
+function Divide() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="currentColor">
+      <circle cx="8" cy="3" r="1.4" />
+      <rect x="2" y="7" width="12" height="1.5" rx="0.5" />
+      <circle cx="8" cy="13" r="1.4" />
+    </svg>
+  );
+}
+
+function ChevronDown() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3 fill-none stroke-current" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4,6 8,10 12,6" />
+    </svg>
+  );
+}
+
+function ChevronUp() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3 fill-none stroke-white/65" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4,10 8,6 12,10" />
+    </svg>
+  );
+}
+
+function CheckeredFlag() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3" fill="white">
+      <rect x="3" y="2" width="1" height="11" />
+      <rect x="4" y="3" width="2" height="2" />
+      <rect x="6" y="3" width="2" height="2" fill="black" />
+      <rect x="8" y="3" width="2" height="2" />
+      <rect x="10" y="3" width="2" height="2" fill="black" />
+      <rect x="4" y="5" width="2" height="2" fill="black" />
+      <rect x="6" y="5" width="2" height="2" />
+      <rect x="8" y="5" width="2" height="2" fill="black" />
+      <rect x="10" y="5" width="2" height="2" />
+      <rect x="4" y="7" width="2" height="2" />
+      <rect x="6" y="7" width="2" height="2" fill="black" />
+      <rect x="8" y="7" width="2" height="2" />
+      <rect x="10" y="7" width="2" height="2" fill="black" />
+    </svg>
+  );
+}
+
+function PlusIcon({ color = "white" }: { color?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3" stroke={color} strokeWidth="2" strokeLinecap="round">
+      <line x1="8" y1="2" x2="8" y2="14" />
+      <line x1="2" y1="8" x2="14" y2="8" />
+    </svg>
+  );
+}
+
+function WrenchIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="rgba(255,255,255,0.7)">
+      <path d="M14 2 L11 5 L11 7 L9 7 L4 12 L4 14 L6 14 L11 9 L13 9 L14 8 Z" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="white">
+      <polygon points="5,3 13,8 5,13" />
+    </svg>
+  );
+}
+
+function PencilSquare() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5 fill-none stroke-current" strokeWidth="1.4">
+      <rect x="2" y="2" width="12" height="12" rx="2" />
+      <path d="M5 10 L10 5 L11 6 L6 11 Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5 fill-none stroke-current" strokeWidth="1.4" strokeLinecap="round">
+      <polyline points="3,6 3,3 6,3" />
+      <line x1="3" y1="3" x2="7" y2="7" />
+      <polyline points="13,10 13,13 10,13" />
+      <line x1="13" y1="13" x2="9" y2="9" />
+    </svg>
+  );
+}
+
+function EllipsisHorizontal() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="currentColor">
+      <circle cx="3" cy="8" r="1.4" />
+      <circle cx="8" cy="8" r="1.4" />
+      <circle cx="13" cy="8" r="1.4" />
+    </svg>
+  );
+}
+
+function ClusterMark() {
+  // 7-dot Redprint cluster — same arrangement as the marketing-site mark.
+  const cx = 10;
+  const cy = 10;
+  const r = 5;
+  const dots = [
+    { x: cx, y: cy },
+    { x: cx, y: cy - r },
+    { x: cx + r * 0.87, y: cy - r * 0.5 },
+    { x: cx + r * 0.87, y: cy + r * 0.5 },
+    { x: cx, y: cy + r },
+    { x: cx - r * 0.87, y: cy + r * 0.5 },
+    { x: cx - r * 0.87, y: cy - r * 0.5 },
+  ];
+  return (
+    <svg viewBox="0 0 20 20" className="h-5 w-5">
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r="1.5" fill="white" />
+      ))}
+    </svg>
   );
 }
