@@ -558,7 +558,7 @@ function TabBar({ org }: { org: Org }) {
           transform: "translateX(-50%)",
           width: BUTTON_SIZE,
           height: BUTTON_SIZE,
-          backgroundColor: orgColor,
+          backgroundColor: darken(orgColor, 50),
           boxShadow:
             "1.5px 1.5px 3px rgba(0,0,0,0.35), -1.5px -1.5px 3px rgba(255,255,255,0.15)",
         }}
