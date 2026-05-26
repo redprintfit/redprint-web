@@ -52,7 +52,18 @@ export function HomeWorkoutView({ org }: { org: Org }) {
       }}
     >
 
-      <div className="flex-1 overflow-hidden px-2 pt-7">
+      {/* Top section has its own org-tinted wrapper (matches iOS where the
+          workout-info area sits on a darker zone that visually wraps the
+          card + actions + section header). The exercise list below sits
+          on the page's base bg. */}
+      <div
+        className="px-2 pt-7"
+        style={{
+          backgroundColor: isDark
+            ? `${darken(orgColor, 75)}99`
+            : `${darken(orgColor, 65)}1F`,
+        }}
+      >
         {/* ---------- Workout info card ---------- */}
         <div
           className="rounded-[14px] px-1.5 pb-1.5 pt-1.5"
@@ -103,9 +114,13 @@ export function HomeWorkoutView({ org }: { org: Org }) {
           <AllExercisesButton />
           <WrenchButton />
         </div>
+        {/* Pad below the buttons so the top-tinted zone has breathing room */}
+        <div className="pb-2" />
+      </div>
 
-        {/* ---------- Exercises section header ---------- */}
-        <div className="mt-2 flex items-center justify-between px-1 opacity-50">
+      {/* ---------- Exercises section (sits on page bg, not the top tint) ---------- */}
+      <div className="flex-1 overflow-hidden px-2 pt-2">
+        <div className="flex items-center justify-between px-1 opacity-50">
           <div className="text-[10px] font-semibold">
             Exercises
             <span> (7)</span>
@@ -115,8 +130,15 @@ export function HomeWorkoutView({ org }: { org: Org }) {
           </button>
         </div>
 
-        {/* ---------- Expanded exercise card (Barbell Bench Press) ---------- */}
+        {/* Expanded exercise card (Barbell Bench Press) */}
         <ExerciseCard org={org} orgDark65={orgDark65} isDark={isDark} />
+
+        {/* Collapsed exercise rows */}
+        <div className="mt-1 space-y-1">
+          <CollapsedExercise name="Barbell Incline Bench Press" sets={4} />
+          <CollapsedExercise name="Dumbbell Incline Bench Press" sets={3} />
+          <CollapsedExercise name="Dumbbell Fly" sets={3} />
+        </div>
       </div>
 
       {/* ---------- Floating NFC cluster button (peeks at bottom) ---------- */}
@@ -316,8 +338,8 @@ function ExerciseCard({
           <div className="w-[14px]" />
         </div>
 
-        <SetRow num={1} lastImported reps="8" weight="135" />
-        <SetRow num={2} lastImported reps="8" weight="135" />
+        <SetRow num={1} reps="8" weight="135" />
+        <SetRow num={2} reps="8" weight="135" />
         <SetRow num={3} reps="8" weight="135" />
         <SetRow num={4} reps="8" weight="135" />
       </div>
@@ -334,6 +356,29 @@ function ExerciseCard({
         </span>
         <PlusIcon color={REDPRINT_GREEN} />
       </button>
+    </div>
+  );
+}
+
+function CollapsedExercise({ name, sets }: { name: string; sets: number }) {
+  return (
+    <div className="light:bg-black/[0.04] light:text-black flex items-center justify-between rounded-[12px] bg-white/[0.05] px-3 py-2 text-white">
+      <span
+        className="text-[11px] leading-tight"
+        style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+      >
+        {name}
+      </span>
+      <div className="flex items-center gap-1">
+        <span
+          className="light:text-black text-[10px] text-white"
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+        >
+          {sets}
+        </span>
+        <span className="light:text-black/55 text-[7px] text-white/55">sets</span>
+        <span className="light:text-black/65 ml-0.5 text-[8px] text-white/65">⌄</span>
+      </div>
     </div>
   );
 }
