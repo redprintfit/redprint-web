@@ -207,7 +207,11 @@ export function Hero() {
                 key={id}
                 ref={openingDone ? undefined : (ref ?? undefined)}
                 className="absolute"
-                initial={false}
+                // Slots 0/1/2 are managed by GSAP during the opening (no
+                // initial). Slots 3/4 are off-stage (opacity 0) the whole
+                // time — give them a baked initial so they don't flash at
+                // viewport center before the first tick.
+                initial={slot >= 3 ? targets[slot] : false}
                 animate={openingDone ? targets[slot] : undefined}
                 transition={{ duration: ROTATION_DURATION, ease: ROTATION_EASE }}
                 style={{ zIndex: SLOT_Z[slot] }}
