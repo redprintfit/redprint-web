@@ -20,15 +20,21 @@ type Props = {
 
 /** Item size in px (matches md:h-14 md:w-14 = 3.5rem = 56px). */
 const ITEM_SIZE = 56;
+/** Active item is rendered larger than the on-deck ones. Other slots
+ *  shift right by the extra width so the gap stays consistent. */
+const ACTIVE_SCALE = 1.3;
+const ACTIVE_EXTRA = ITEM_SIZE * (ACTIVE_SCALE - 1); // 16.8
+
 /** Cumulative x position (left edge) for each slot. Gaps after each slot
- *  shrink the further from active: 18 / 10 / 6 px. */
+ *  shrink the further from active: 18 / 10 / 6 px. The first gap also
+ *  accounts for the larger active item. */
 const SLOT_X = [
   0,
-  ITEM_SIZE + 18, // 74
-  ITEM_SIZE + 18 + ITEM_SIZE + 10, // 140
-  ITEM_SIZE + 18 + ITEM_SIZE + 10 + ITEM_SIZE + 6, // 202
+  ITEM_SIZE + ACTIVE_EXTRA + 18, // ~91
+  ITEM_SIZE + ACTIVE_EXTRA + 18 + ITEM_SIZE + 10, // ~157
+  ITEM_SIZE + ACTIVE_EXTRA + 18 + ITEM_SIZE + 10 + ITEM_SIZE + 6, // ~219
 ];
-const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // 258
+const TRACK_WIDTH = SLOT_X[SLOT_X.length - 1] + ITEM_SIZE; // ~275
 
 /**
  * Horizontal "wheel picker" carousel. Active item is leftmost and fully
@@ -78,8 +84,10 @@ export function OrgCarousel({
         {visible.map((org, pos) => {
           const opacity =
             pos === 0 ? 1 : ([null, 0.5, 0.3, 0.18][pos] ?? 0.15);
-          const scaleX = pos === 0 ? 1 : Math.max(0.5, 1 - pos * 0.15);
-          const scaleY = pos === 0 ? 1 : Math.max(0.8, 1 - pos * 0.06);
+          const scaleX =
+            pos === 0 ? ACTIVE_SCALE : Math.max(0.5, 1 - pos * 0.15);
+          const scaleY =
+            pos === 0 ? ACTIVE_SCALE : Math.max(0.8, 1 - pos * 0.06);
           const x = SLOT_X[pos] ?? SLOT_X[SLOT_X.length - 1] + 60;
 
           return (
