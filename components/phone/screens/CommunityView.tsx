@@ -475,20 +475,45 @@ function WorkoutPostCard({
 
 function TabBar({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
+  // iOS CustomTabBar uses a single shape `BarWithBump` filled with the
+  // full orgColor, with a circular cutout at the top center where the
+  // NFC scan button bumps up. Text is always white (the tab bar doesn't
+  // flip with system theme in the iOS app).
   return (
-    <nav
-      className="relative flex h-[44px] items-end justify-around border-t border-white/5 px-3 pb-2 pt-1"
-      style={{ backgroundColor: `${orgColor}30` }}
-    >
-      <TabItem iconSrc="/icons/track_tab_main.png" label="Track" />
-      <TabItem iconSrc="/icons/workouts_tab_main.png" label="Workouts" />
+    <nav className="relative" style={{ height: 42 }}>
+      {/* Bar + bump shape — SVG path for the cutout. */}
+      <svg
+        viewBox="0 0 260 42"
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full"
+      >
+        <path
+          d="M 0 0 L 105 0 A 25 25 0 0 0 155 0 L 260 0 L 260 42 L 0 42 Z"
+          fill={orgColor}
+        />
+      </svg>
 
-      {/* Center floating Redprint cluster button */}
-      <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
+      {/* Tab items */}
+      <div className="relative flex h-full items-end justify-around px-2 pb-1 text-white">
+        <TabItem iconSrc="/icons/track_tab_main.png" label="Track" />
+        <TabItem iconSrc="/icons/workouts_tab_main.png" label="Workouts" />
+        <div className="w-7" />
+        <TabItem
+          iconSrc="/icons/community_tab_main.png"
+          label="Community"
+          active
+        />
+        <TabItem profile label="Profile" />
+      </div>
+
+      {/* Center NFC scan button — full orgColor circle, dual shadow */}
+      <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
         <div
-          className="flex h-[32px] w-[32px] items-center justify-center rounded-full text-white shadow-lg"
+          className="flex h-[34px] w-[34px] items-center justify-center rounded-full"
           style={{
-            background: `radial-gradient(circle, ${darken(orgColor, 40)} 0%, ${darken(orgColor, 60)} 100%)`,
+            backgroundColor: orgColor,
+            boxShadow:
+              "1.5px 1.5px 2px rgba(0,0,0,0.25), -1.5px -1.5px 2px rgba(255,255,255,0.10)",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -499,52 +524,56 @@ function TabBar({ org }: { org: Org }) {
           />
         </div>
       </div>
-      <div className="w-7" />
-
-      <TabItem iconSrc="/icons/community_tab_main.png" label="Community" active />
-      <TabItem icon={<ProfileCircle />} label="Profile" />
     </nav>
   );
 }
 
 function TabItem({
   iconSrc,
-  icon,
+  profile,
   label,
   active,
 }: {
   iconSrc?: string;
-  icon?: React.ReactNode;
+  profile?: boolean;
   label: string;
   active?: boolean;
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-0.5 ${active ? "light:text-black text-white" : "light:text-black/55 text-white/55"}`}
+      className={`flex flex-col items-center gap-[1px] ${
+        active ? "text-white" : "text-white/50"
+      }`}
     >
-      <div className="h-3.5 w-3.5">
-        {iconSrc ? (
-          // Render iOS tab icon as a mask over currentColor so it adopts
-          // the active/inactive opacity automatically.
+      <div className="h-[14px] w-[14px]">
+        {profile ? (
+          // Profile picture — circle with white stroke (1.5px @ 0.5/1.0)
           <div
-            className="h-full w-full"
+            className="h-full w-full rounded-full bg-zinc-400"
             style={{
-              backgroundColor: "currentColor",
-              WebkitMaskImage: `url(${iconSrc})`,
-              WebkitMaskSize: "contain",
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${iconSrc})`,
-              maskSize: "contain",
-              maskRepeat: "no-repeat",
-              maskPosition: "center",
+              boxShadow: `inset 0 0 0 1px ${active ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.5)"}`,
             }}
           />
         ) : (
-          icon
+          iconSrc && (
+            <div
+              className="h-full w-full"
+              style={{
+                backgroundColor: "currentColor",
+                WebkitMaskImage: `url(${iconSrc})`,
+                WebkitMaskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskImage: `url(${iconSrc})`,
+                maskSize: "contain",
+                maskRepeat: "no-repeat",
+                maskPosition: "center",
+              }}
+            />
+          )
         )}
       </div>
-      <span className="text-[6px] font-medium">{label}</span>
+      <span className="text-[6px] font-semibold leading-none">{label}</span>
     </div>
   );
 }
@@ -661,12 +690,3 @@ function Ellipsis() {
   );
 }
 
-function ProfileCircle() {
-  return (
-    <svg viewBox="0 0 16 16" className="h-full w-full">
-      <circle cx="8" cy="8" r="6" fill="rgba(255,255,255,0.15)" />
-      <circle cx="8" cy="6.5" r="2" fill="currentColor" />
-      <path d="M3 14 a5 5 0 0 1 10 0" fill="currentColor" />
-    </svg>
-  );
-}
