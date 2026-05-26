@@ -100,7 +100,12 @@ export function HomeWorkoutView({ org }: { org: Org }) {
           className="flex h-[44px] w-[44px] items-center justify-center rounded-full shadow-[0_2px_3px_rgba(0,0,0,0.25),0_-2px_3px_rgba(255,255,255,0.08)]"
           style={{ backgroundColor: orgColor }}
         >
-          <ClusterMark />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/redprint-emblem.png"
+            alt="Redprint"
+            className="h-[55%] w-[55%]"
+          />
         </div>
       </div>
     </div>
@@ -546,25 +551,3 @@ function EllipsisHorizontal() {
   );
 }
 
-function ClusterMark() {
-  // 7-dot Redprint cluster — same arrangement as the marketing-site mark.
-  const cx = 10;
-  const cy = 10;
-  const r = 5;
-  const dots = [
-    { x: cx, y: cy },
-    { x: cx, y: cy - r },
-    { x: cx + r * 0.87, y: cy - r * 0.5 },
-    { x: cx + r * 0.87, y: cy + r * 0.5 },
-    { x: cx, y: cy + r },
-    { x: cx - r * 0.87, y: cy + r * 0.5 },
-    { x: cx - r * 0.87, y: cy - r * 0.5 },
-  ];
-  return (
-    <svg viewBox="0 0 20 20" className="h-5 w-5">
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r="1.5" fill="white" />
-      ))}
-    </svg>
-  );
-}

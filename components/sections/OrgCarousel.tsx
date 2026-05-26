@@ -109,22 +109,28 @@ export function OrgCarousel({
 }
 
 /**
- * Placeholder logo: colored disc with the org's short name. Swap to a real
- * <Image src={org.logoSrc}> once SVGs are dropped into public/logos/.
+ * Org logo. Real PNG (lifted from Redprint5/Assets.xcassets/Gym Photos/Gym Logos),
+ * sat on a small dark disc so transparent logos read on both themes.
  */
 function OrgLogoPlaceholder({ org, active }: { org: Org; active: boolean }) {
   return (
     <div
-      className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
+      className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-black/40 shadow-md"
       style={{
-        backgroundColor: org.primaryColor,
         // Stroke flips with the theme (white in dark mode, dark in light mode).
         boxShadow: active
           ? "0 0 0 2px var(--color-fg-base), 0 4px 12px rgba(0,0,0,0.3)"
           : "none",
       }}
     >
-      {org.shortName}
+      {/* Using a plain <img> instead of next/image: per-org logos vary in
+          dimensions and we don't need Next's optimization at 56px. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={org.logoSrc}
+        alt={`${org.name} logo`}
+        className="h-[80%] w-[80%] object-contain"
+      />
     </div>
   );
 }

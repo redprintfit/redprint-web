@@ -2,9 +2,6 @@ import { darken, type Org } from "@/lib/content/orgs";
 
 /* ---------- Brand color tokens from iOS ColorExtension.swift ---------- */
 const REDPRINT_GREEN = "rgb(0, 210, 85)";
-const MEDAL_GOLD = "rgb(212, 175, 55)";
-const MEDAL_SILVER = "rgb(192, 192, 198)";
-const MEDAL_BRONZE = "rgb(176, 107, 45)";
 
 /* ---------- Hardcoded leaderboard placeholder data ---------- */
 type LeaderRow = {
@@ -13,7 +10,7 @@ type LeaderRow = {
   location: string;
   pointsBehind: string;
   color: string;
-  logo?: string;
+  logoSrc?: string;
 };
 
 const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
@@ -24,6 +21,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Niagara, NY",
       pointsBehind: "-480.3k",
       color: "#4B2A6B",
+      logoSrc: "/logos/niagara.png",
     },
     {
       // Center / gold — replaced at render time with the active org
@@ -39,6 +37,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Waltham, MA",
       pointsBehind: "-563.6k",
       color: "#7B6E3D",
+      logoSrc: "/logos/waverley_oaks.png",
     },
   ],
   rows: [
@@ -48,6 +47,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "St. Louis, MO",
       pointsBehind: "-695.9k",
       color: "#dde2e8",
+      logoSrc: "/logos/umsl.png",
     },
     {
       shortName: "C",
@@ -55,6 +55,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Clemson, SC",
       pointsBehind: "-828.9k",
       color: "#F66733",
+      logoSrc: "/logos/clemson.png",
     },
   ],
 };
@@ -135,6 +136,7 @@ export function CommunityView({ org }: { org: Org }) {
               location: `${org.name.split(" ")[0]}, PA`,
               pointsBehind: "",
               color: orgColor,
+              logoSrc: org.logoSrc,
             }}
             place={1}
             heightOffset={0}
@@ -217,9 +219,6 @@ function PodiumCell({
   isMyGym?: boolean;
   rankDelta?: number;
 }) {
-  const medalColor =
-    place === 1 ? MEDAL_GOLD : place === 2 ? MEDAL_SILVER : MEDAL_BRONZE;
-
   return (
     <div
       className="relative flex w-[58px] flex-col items-center rounded-[10px] pb-1.5 pt-2"
@@ -235,19 +234,42 @@ function PodiumCell({
         }),
       }}
     >
-      {/* Medal badge */}
-      <div className="absolute -top-1 left-1/2 z-10 flex -translate-x-1/2 items-center justify-center">
-        <MedalBadge place={place} color={medalColor} />
+      {/* Medal badge (real PNG asset from iOS) */}
+      <div className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={
+            place === 1
+              ? "/icons/medal-gold.png"
+              : place === 2
+                ? "/icons/medal-silver.png"
+                : "/icons/medal-bronze.png"
+          }
+          alt={`${place} medal`}
+          className="h-[18px] w-[18px] drop-shadow-md"
+        />
       </div>
 
-      {/* Logo */}
+      {/* Logo (real PNG, fallback to colored initial) */}
       <div
-        className="mt-3 flex h-[34px] w-[34px] items-center justify-center rounded-full text-[14px] font-bold text-white shadow-md"
-        style={{ backgroundColor: org.color }}
+        className="mt-3 flex h-[34px] w-[34px] items-center justify-center overflow-hidden rounded-full shadow-md"
+        style={{ backgroundColor: org.logoSrc ? "rgba(0,0,0,0.4)" : org.color }}
       >
-        <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}>
-          {org.shortName}
-        </span>
+        {org.logoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={org.logoSrc}
+            alt={`${org.name} logo`}
+            className="h-[80%] w-[80%] object-contain"
+          />
+        ) : (
+          <span
+            className="text-[14px] font-bold text-white"
+            style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
+          >
+            {org.shortName}
+          </span>
+        )}
       </div>
 
       {/* Org name */}
@@ -290,43 +312,6 @@ function PodiumCell({
   );
 }
 
-function MedalBadge({
-  place,
-  color,
-}: {
-  place: 1 | 2 | 3;
-  color: string;
-}) {
-  // Sunburst medal — 8-point star. Approximation of the iOS PNGs.
-  const points = 8;
-  const outer = 9;
-  const inner = 6;
-  const cx = 10;
-  const cy = 10;
-  const path = Array.from({ length: points * 2 }, (_, i) => {
-    const r = i % 2 === 0 ? outer : inner;
-    const a = (i * Math.PI) / points - Math.PI / 2;
-    return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
-  }).join(" ");
-
-  return (
-    <svg viewBox="0 0 20 20" className="h-[16px] w-[16px] drop-shadow">
-      <polygon points={path} fill={color} stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" />
-      <text
-        x="10"
-        y="13"
-        textAnchor="middle"
-        fontSize="9"
-        fontWeight="800"
-        fill="white"
-        style={{ fontFamily: "Outfit, sans-serif" }}
-      >
-        {place}
-      </text>
-    </svg>
-  );
-}
-
 function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
   return (
     <div
@@ -340,10 +325,21 @@ function BottomRow({ rank, org }: { rank: number; org: LeaderRow }) {
         {rank}
       </span>
       <div
-        className="h-[20px] w-[20px] flex-shrink-0 rounded-full text-center text-[9px] font-bold leading-[20px] text-white"
-        style={{ backgroundColor: org.color }}
+        className="flex h-[20px] w-[20px] flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
+        style={{ backgroundColor: org.logoSrc ? "rgba(0,0,0,0.4)" : org.color }}
       >
-        {org.shortName}
+        {org.logoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={org.logoSrc}
+            alt={`${org.name} logo`}
+            className="h-[80%] w-[80%] object-contain"
+          />
+        ) : (
+          <span className="text-[9px] font-bold leading-none text-white">
+            {org.shortName}
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col leading-tight">
         <span
@@ -472,8 +468,8 @@ function TabBar({ org }: { org: Org }) {
       className="relative flex h-[44px] items-end justify-around border-t border-white/5 px-3 pb-2 pt-1"
       style={{ backgroundColor: `${orgColor}30` }}
     >
-      <TabItem icon={<ArrowUpRightChart />} label="Track" />
-      <TabItem icon={<DumbbellTabIcon />} label="Workouts" />
+      <TabItem iconSrc="/icons/track_tab_main.png" label="Track" />
+      <TabItem iconSrc="/icons/workouts_tab_main.png" label="Workouts" />
 
       {/* Center floating Redprint cluster button */}
       <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
@@ -483,31 +479,59 @@ function TabBar({ org }: { org: Org }) {
             background: `radial-gradient(circle, ${darken(orgColor, 40)} 0%, ${darken(orgColor, 60)} 100%)`,
           }}
         >
-          <ClusterMark />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/redprint-emblem.png"
+            alt="Redprint"
+            className="h-[60%] w-[60%]"
+          />
         </div>
       </div>
       <div className="w-7" />
 
-      <TabItem icon={<ClusterMark filled />} label="Community" active />
+      <TabItem iconSrc="/icons/community_tab_main.png" label="Community" active />
       <TabItem icon={<ProfileCircle />} label="Profile" />
     </nav>
   );
 }
 
 function TabItem({
+  iconSrc,
   icon,
   label,
   active,
 }: {
-  icon: React.ReactNode;
+  iconSrc?: string;
+  icon?: React.ReactNode;
   label: string;
   active?: boolean;
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-0.5 ${active ? "text-white" : "text-white/45"}`}
+      className={`flex flex-col items-center gap-0.5 ${active ? "text-white" : "text-white/55"}`}
     >
-      <div className="h-3 w-3">{icon}</div>
+      <div className="h-3.5 w-3.5">
+        {iconSrc ? (
+          // Render iOS tab icon as a mask over currentColor so it adopts
+          // the active/inactive opacity automatically.
+          <div
+            className="h-full w-full"
+            style={{
+              backgroundColor: "currentColor",
+              WebkitMaskImage: `url(${iconSrc})`,
+              WebkitMaskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+              maskImage: `url(${iconSrc})`,
+              maskSize: "contain",
+              maskRepeat: "no-repeat",
+              maskPosition: "center",
+            }}
+          />
+        ) : (
+          icon
+        )}
+      </div>
       <span className="text-[6px] font-medium">{label}</span>
     </div>
   );
@@ -621,48 +645,6 @@ function Ellipsis() {
       <circle cx="3" cy="8" r="1.4" />
       <circle cx="8" cy="8" r="1.4" />
       <circle cx="13" cy="8" r="1.4" />
-    </svg>
-  );
-}
-
-function ArrowUpRightChart() {
-  return (
-    <svg viewBox="0 0 16 16" className="h-full w-full fill-none stroke-current" strokeWidth="1.4" strokeLinecap="round">
-      <path d="M2 13 L6 9 L9 11 L14 4" />
-      <polyline points="11,4 14,4 14,7" />
-    </svg>
-  );
-}
-
-function DumbbellTabIcon() {
-  return <Dumbbell color="currentColor" />;
-}
-
-function ClusterMark({ filled }: { filled?: boolean }) {
-  // 7-dot cluster (6 around 1 center). Matches the Redprint emblem.
-  const cx = 8;
-  const cy = 8;
-  const r = 4;
-  const dots = [
-    { x: cx, y: cy },
-    { x: cx, y: cy - r },
-    { x: cx + r * 0.87, y: cy - r * 0.5 },
-    { x: cx + r * 0.87, y: cy + r * 0.5 },
-    { x: cx, y: cy + r },
-    { x: cx - r * 0.87, y: cy + r * 0.5 },
-    { x: cx - r * 0.87, y: cy - r * 0.5 },
-  ];
-  return (
-    <svg viewBox="0 0 16 16" className="h-full w-full">
-      {dots.map((d, i) => (
-        <circle
-          key={i}
-          cx={d.x}
-          cy={d.y}
-          r="1.1"
-          fill={filled ? "currentColor" : "white"}
-        />
-      ))}
     </svg>
   );
 }
