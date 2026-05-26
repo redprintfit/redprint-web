@@ -21,7 +21,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Niagara, NY",
       pointsBehind: "-480.3k",
       color: "#4B2A6B",
-      logoSrc: "/logos/niagara.png",
+      logoSrc: "/logos/niagara.jpg",
     },
     {
       // Center / gold — replaced at render time with the active org
@@ -37,7 +37,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Waltham, MA",
       pointsBehind: "-563.6k",
       color: "#7B6E3D",
-      logoSrc: "/logos/waverley_oaks.png",
+      logoSrc: "/logos/waverley_oaks.jpg",
     },
   ],
   rows: [
@@ -47,7 +47,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "St. Louis, MO",
       pointsBehind: "-695.9k",
       color: "#dde2e8",
-      logoSrc: "/logos/umsl.png",
+      logoSrc: "/logos/umsl.jpg",
     },
     {
       shortName: "C",
@@ -55,7 +55,7 @@ const STATIC_LEADERBOARD: { top3: LeaderRow[]; rows: LeaderRow[] } = {
       location: "Clemson, SC",
       pointsBehind: "-828.9k",
       color: "#F66733",
-      logoSrc: "/logos/clemson.png",
+      logoSrc: "/logos/clemson.jpg",
     },
   ],
 };
@@ -128,7 +128,9 @@ export function CommunityView({ org }: { org: Org }) {
             heightOffset={20}
             rankDelta={1}
           />
-          {/* 1st place — gold, ACTIVE ORG (highlighted green) */}
+          {/* 1st place — gold, ACTIVE ORG (highlighted green). Uses the jpg
+              filename derived from the org id (CommunityView shows jpg, not
+              the transparent png the carousel uses). */}
           <PodiumCell
             org={{
               shortName: org.shortName,
@@ -136,7 +138,7 @@ export function CommunityView({ org }: { org: Org }) {
               location: `${org.name.split(" ")[0]}, PA`,
               pointsBehind: "",
               color: orgColor,
-              logoSrc: org.logoSrc,
+              logoSrc: `/logos/${org.id.replace(/-/g, "_")}.jpg`,
             }}
             place={1}
             heightOffset={0}
