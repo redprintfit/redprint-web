@@ -157,7 +157,21 @@ export function Hero() {
     );
     observer.observe(sectionRef.current);
 
-    return () => observer.disconnect();
+    // Failsafe: on navigation-back (or any case where the observer flow
+    // doesn't reach play()), force the final state so the phones don't
+    // stay at their default unstyled positions forever.
+    const failsafe = window.setTimeout(() => {
+      if (!played) {
+        played = true;
+        setTypingStarted(true);
+        setOpeningDone(true);
+      }
+    }, 2500);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(failsafe);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
