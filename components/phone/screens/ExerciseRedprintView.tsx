@@ -162,7 +162,7 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
 function VideoThumb({ active, src }: { active?: boolean; src: string }) {
   return (
     <div
-      className="relative aspect-[2/3] flex-1 overflow-hidden rounded-[10px]"
+      className="relative aspect-[2/2.7] flex-1 overflow-hidden rounded-[10px]"
       style={{
         boxShadow: active
           ? "0 0 0 1.5px #3b82f6, 0 0 0 3px transparent"
