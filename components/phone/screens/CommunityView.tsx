@@ -481,7 +481,7 @@ function TabBar({ org }: { org: Org }) {
   // tab .padding(.bottom, 40). Scale factor 0.55 for our phone size.
   const W = 260;
   const BAR_H = 60; // bar (bottom portion of nav)
-  const PEAK_H = 14; // bump extends this far above bar top
+  const PEAK_H = 22; // bump extends this far above bar top (room for button)
   const NAV_H = BAR_H + PEAK_H;
   const HALF_W = 44; // bump half-width — slightly wider than button
   const CX = W / 2;
@@ -501,11 +501,10 @@ function TabBar({ org }: { org: Org }) {
     Z
   `;
 
-  // NFC button — mostly INSIDE the bar (iOS button center = barH/2 - barH/15
-  // below bar top ≈ 47% of barH). Same color as bar; only the shadow makes
-  // its edge visible. The bump in the bar's top creates the visual interest.
+  // NFC button — visually centered on the bump. ~35% protrudes above
+  // the bar's top edge, 65% sits inside the bar.
   const BUTTON_SIZE = 46;
-  const BUTTON_CENTER_Y = BAR_TOP + BAR_H * 0.27; // ~16px below bar top
+  const BUTTON_CENTER_Y = BAR_TOP + 7; // 7px below bar top → 16px above
 
   return (
     <nav className="relative" style={{ height: NAV_H }}>
