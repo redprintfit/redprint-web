@@ -35,14 +35,16 @@ export function HomeWorkoutView({ org }: { org: Org }) {
   const infoCardBg = isDark ? orgLight60 : darken(orgColor, 65);
   const infoLabelColor = isDark ? "#1a1a1a" : "#ffffff";
 
+  // Page tint matches iOS: darken(orgColor, 65) @ 25% dark / 10% light.
+  const tintAlpha = isDark ? "40" : "1A";
+
   return (
     <div
-      className="light:text-black relative flex h-full flex-col overflow-hidden bg-black text-white"
+      className="light:bg-white light:text-black relative flex h-full flex-col overflow-hidden bg-black text-white"
       style={{
-        backgroundImage: `linear-gradient(180deg, ${orgDark65}40 0%, ${orgDark65}1f 100%)`,
+        backgroundImage: `linear-gradient(180deg, ${orgDark65}${tintAlpha} 0%, ${orgDark65}${isDark ? "1f" : "0d"} 100%)`,
       }}
     >
-      <div className="light:bg-white absolute inset-0 -z-10" />
 
       <div className="flex-1 overflow-hidden px-2 pt-7">
         {/* ---------- Workout info card ---------- */}
