@@ -279,16 +279,16 @@ function ExerciseCard({
 
       {/* Action buttons row — 4 circles */}
       <div className="mt-1.5 flex items-center justify-around">
-        <CircleActionButton color="#a855f7">
+        <CircleActionButton filled>
           <PlayIcon />
         </CircleActionButton>
-        <CircleActionButton color="#fff">
+        <CircleActionButton>
           <PencilSquare />
         </CircleActionButton>
-        <CircleActionButton color="#fff">
+        <CircleActionButton>
           <ExpandIcon />
         </CircleActionButton>
-        <CircleActionButton color="#fff" outlined>
+        <CircleActionButton outlined>
           <EllipsisHorizontal />
         </CircleActionButton>
       </div>
@@ -333,37 +333,32 @@ function ExerciseCard({
 }
 
 function CircleActionButton({
-  color,
+  filled,
   outlined,
   children,
 }: {
-  color: string;
+  /** Purple solid fill (matches the iOS play button). */
+  filled?: boolean;
+  /** Stroked circle with the same icon tint. */
   outlined?: boolean;
   children: React.ReactNode;
 }) {
+  if (filled) {
+    return (
+      <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-purple-500 text-white">
+        {children}
+      </div>
+    );
+  }
   return (
     <div
-      className="flex h-[26px] w-[26px] items-center justify-center rounded-full"
-      style={{
-        backgroundColor: outlined ? "transparent" : "transparent",
-        border: outlined
-          ? "1.2px solid rgba(255,255,255,0.35)"
-          : "none",
-        color,
-      }}
+      className={`light:text-black flex h-[26px] w-[26px] items-center justify-center rounded-full text-white ${
+        outlined
+          ? "light:border-black/35 border-[1.2px] border-white/35"
+          : ""
+      }`}
     >
-      {!outlined && (
-        <div
-          className="flex h-full w-full items-center justify-center rounded-full"
-          style={{
-            backgroundColor: color === "#a855f7" ? color : "transparent",
-            color: color === "#a855f7" ? "white" : color,
-          }}
-        >
-          {children}
-        </div>
-      )}
-      {outlined && children}
+      {children}
     </div>
   );
 }
