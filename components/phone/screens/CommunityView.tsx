@@ -476,24 +476,20 @@ function WorkoutPostCard({
 function TabBar({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
 
-  // Geometry — scaled from iOS BarWithBump (barH 110, bumpR 160,
-  // bumpCenterBelow 137 → halfW≈83, peakY≈-23; button 85 sits offset
-  // y -7 from bar center).
+  // Geometry — direct scale from iOS BarWithBump + CustomTabBar.
+  // iOS: barH 110, bumpRadius 160, bumpCenterBelow 137, button 85,
+  // tab .padding(.bottom, 40). Scale factor 0.55 for our phone size.
   const W = 260;
-  const BAR_H = 48; // visible bar height (bottom portion of nav)
-  const PEAK_H = 14; // how far the bump extends above the bar top
-  const NAV_H = BAR_H + PEAK_H; // total nav height incl. bump room
-  // iOS: button is ~51% of bump width. Match that ratio with our 36px
-  // button: bump halfW = 36/2 / 0.51 = ~35 → bump total width 70.
-  const HALF_W = 30; // half-width where bump meets bar top
+  const BAR_H = 60; // bar (bottom portion of nav)
+  const PEAK_H = 14; // bump extends this far above bar top
+  const NAV_H = BAR_H + PEAK_H;
+  const HALF_W = 44; // bump half-width — slightly wider than button
   const CX = W / 2;
   const CTRL = HALF_W * 0.45;
-  const BAR_TOP = PEAK_H; // y of the bar's flat top (in nav coords)
-  const PEAK_Y = 0; // y of the bump's peak (top of nav)
+  const BAR_TOP = PEAK_H;
+  const PEAK_Y = 0;
 
-  // Two cubic Bezier curves forming the S-shape bump.
-  // Both control points share x with the start/end (creating horizontal
-  // departure from the bar top and vertical arrival at the peak).
+  // Two cubic Beziers forming the S-shape bump (matches iOS).
   const path = `
     M 0 ${BAR_TOP}
     L ${CX - HALF_W} ${BAR_TOP}
@@ -505,9 +501,11 @@ function TabBar({ org }: { org: Org }) {
     Z
   `;
 
-  // NFC button — centered on the bump so it fills it like in iOS.
-  const BUTTON_SIZE = 36;
-  const BUTTON_CENTER_Y = BAR_TOP - 1; // straddles the bar's top edge
+  // NFC button — mostly INSIDE the bar (iOS button center = barH/2 - barH/15
+  // below bar top ≈ 47% of barH). Same color as bar; only the shadow makes
+  // its edge visible. The bump in the bar's top creates the visual interest.
+  const BUTTON_SIZE = 46;
+  const BUTTON_CENTER_Y = BAR_TOP + BAR_H * 0.27; // ~16px below bar top
 
   return (
     <nav className="relative" style={{ height: NAV_H }}>
@@ -520,10 +518,14 @@ function TabBar({ org }: { org: Org }) {
         <path d={path} fill={orgColor} />
       </svg>
 
-      {/* Tab items — pinned to the bottom (only in the bar area) */}
+      {/* Tab items — positioned with iOS-style bottom padding so they
+          sit in the UPPER portion of the bar (not jammed at the bottom). */}
       <div
-        className="absolute inset-x-0 bottom-0 flex items-end justify-around px-2 pb-1 text-white"
-        style={{ height: BAR_H }}
+        className="absolute inset-x-0 flex items-center justify-around text-white"
+        style={{
+          top: BAR_TOP + 6, // slight top padding inside bar
+          bottom: BAR_H * 0.32, // matches iOS .padding(.bottom, 40) on 110px bar
+        }}
       >
         <TabItem
           mainIcon="/icons/track_tab_main.png"
@@ -535,7 +537,8 @@ function TabBar({ org }: { org: Org }) {
           lineIcon="/icons/workouts_tab_main_line.png"
           label="Workouts"
         />
-        <div className="w-9" />
+        {/* Center gap to clear the button. */}
+        <div style={{ width: BUTTON_SIZE + 16 }} />
         <TabItem
           mainIcon="/icons/community_tab_main.png"
           lineIcon="/icons/community_tab_main_line.png"
@@ -545,7 +548,7 @@ function TabBar({ org }: { org: Org }) {
         <TabItem profile label="Profile" />
       </div>
 
-      {/* Center NFC scan button — full orgColor, sits on the bump. */}
+      {/* Center NFC scan button — same orgColor as bar; shadow halo only. */}
       <div
         className="absolute z-10 flex items-center justify-center rounded-full"
         style={{
@@ -554,15 +557,17 @@ function TabBar({ org }: { org: Org }) {
           width: BUTTON_SIZE,
           height: BUTTON_SIZE,
           backgroundColor: orgColor,
+          // Slightly stronger shadow than before so the button reads even
+          // when it color-matches the bar.
           boxShadow:
-            "1.2px 1.2px 2px rgba(0,0,0,0.25), -1.2px -1.2px 2px rgba(255,255,255,0.10)",
+            "1.5px 1.5px 3px rgba(0,0,0,0.35), -1.5px -1.5px 3px rgba(255,255,255,0.15)",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logos/redprint-emblem.png"
           alt="Redprint"
-          className="h-[60%] w-[60%]"
+          className="h-[55%] w-[55%]"
         />
       </div>
     </nav>
@@ -582,21 +587,19 @@ function TabItem({
   label: string;
   active?: boolean;
 }) {
-  // iOS: filled icon when selected, line icon when not. We use the same
-  // mask trick so both inherit currentColor (white).
   const iconSrc = active ? mainIcon : lineIcon;
   return (
     <div
-      className={`flex flex-col items-center gap-[1px] ${
+      className={`flex flex-col items-center gap-[2px] ${
         active ? "text-white" : "text-white/55"
       }`}
     >
-      <div className="h-[14px] w-[14px]">
+      <div className="h-[18px] w-[18px]">
         {profile ? (
           <div
             className="h-full w-full rounded-full bg-zinc-400"
             style={{
-              boxShadow: `inset 0 0 0 1px ${active ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.5)"}`,
+              boxShadow: `inset 0 0 0 1.2px ${active ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.5)"}`,
             }}
           />
         ) : (
@@ -618,7 +621,7 @@ function TabItem({
           )
         )}
       </div>
-      <span className="text-[6px] font-semibold leading-none">{label}</span>
+      <span className="text-[8px] font-semibold leading-none">{label}</span>
     </div>
   );
 }
