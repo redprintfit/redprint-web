@@ -35,12 +35,14 @@ const SCREENS = [
  * Phones cycle through all 5 positions; only the first three are visible.
  */
 function slotTransforms(slide: number) {
+  // `y: 0` is explicit so the fan phones' GSAP initial `y: 60` (the
+  // rise-up offset for the front phone) doesn't carry over to them.
   return [
-    { x: -slide, rotate: 0, scale: 1, opacity: 1 }, // 0: front
-    { x: -slide - 60, rotate: -12, scale: 0.9, opacity: 1 }, // 1: mid-fan
-    { x: -slide - 115, rotate: -24, scale: 0.8, opacity: 1 }, // 2: back-fan
-    { x: -slide - 180, rotate: -36, scale: 0.7, opacity: 0 }, // 3: hidden
-    { x: -slide - 240, rotate: -48, scale: 0.6, opacity: 0 }, // 4: hidden
+    { x: -slide, y: 0, rotate: 0, scale: 1, opacity: 1 }, // 0: front
+    { x: -slide - 60, y: 0, rotate: -12, scale: 0.9, opacity: 1 }, // 1: mid-fan
+    { x: -slide - 115, y: 0, rotate: -24, scale: 0.8, opacity: 1 }, // 2: back-fan
+    { x: -slide - 180, y: 0, rotate: -36, scale: 0.7, opacity: 0 }, // 3: hidden
+    { x: -slide - 240, y: 0, rotate: -48, scale: 0.6, opacity: 0 }, // 4: hidden
   ];
 }
 const SLOT_Z = [40, 30, 20, 10, 0];
