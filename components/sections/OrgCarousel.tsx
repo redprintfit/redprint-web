@@ -16,6 +16,9 @@ type Props = {
   onActiveChange?: (org: Org, index: number) => void;
   /** Pause autoplay (uncontrolled mode only). */
   paused?: boolean;
+  /** Fired when a non-active visible logo is clicked. The new active
+   *  index in the `orgs` array is provided. */
+  onSelect?: (newActiveIndex: number) => void;
 };
 
 /** Item size in px (matches md:h-14 md:w-14 = 3.5rem = 56px). */
@@ -59,6 +62,7 @@ export function OrgCarousel({
   activeIndex: controlledIndex,
   onActiveChange,
   paused = false,
+  onSelect,
 }: Props) {
   const controlled = controlledIndex !== undefined;
   const [internalIndex, setInternalIndex] = useState(0);
@@ -96,7 +100,15 @@ export function OrgCarousel({
           return (
             <motion.div
               key={org.id}
-              className="absolute left-0 top-0"
+              className={`absolute left-0 top-0 ${
+                pos > 0 && onSelect ? "cursor-pointer" : ""
+              }`}
+              onClick={() => {
+                // Click on a non-active visible logo promotes it to active.
+                if (pos > 0 && onSelect) {
+                  onSelect((activeIndex + pos) % orgs.length);
+                }
+              }}
               style={{
                 width: ITEM_SIZE,
                 height: ITEM_SIZE,

@@ -249,7 +249,11 @@ export function Hero() {
           </h1>
 
           <div ref={carouselRef}>
-            <OrgCarousel orgs={orgs} activeIndex={orgTick % orgs.length} />
+            <OrgCarousel
+              orgs={orgs}
+              activeIndex={orgTick % orgs.length}
+              onSelect={(newIdx) => setOrgTick(newIdx)}
+            />
           </div>
 
           <div ref={ctasRef} className="mt-6 flex items-center gap-3">
