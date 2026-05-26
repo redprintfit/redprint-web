@@ -4,49 +4,107 @@ export type Org = {
   shortName: string;
   /** Hex of the org's primary brand color. Phone screens + bg use this. */
   primaryColor: string;
-  /** Path under /public/logos/ — drop file with this name. */
+  /** Path under /public/logos/. */
   logoSrc: string;
 };
 
 /**
- * Placeholder org set for the hero carousel. Replace `primaryColor` + drop
- * actual logo SVGs into public/logos/ once assets are provided.
+ * Org set for the hero carousel. Logos lifted from ~/Desktop/Org Logos.
+ * Primary colors are the first element of `brandingColors` in
+ * Redprint5/Data Models/Gyms/GymsModel.swift, resolved through
+ * ColorExtension.swift.
  */
 export const orgs: Org[] = [
   {
-    id: "swarthmore",
-    name: "Swarthmore",
-    shortName: "S",
-    primaryColor: "#8B1F2F",
-    logoSrc: "/logos/swarthmore.png",
+    id: "az_western",
+    name: "AZ Western",
+    shortName: "AZW",
+    primaryColor: "#42c2cb", // aZWesternCG1
+    logoSrc: "/logos/az_western.png",
   },
   {
-    id: "waverley-oaks",
-    name: "Waverley Oaks",
-    shortName: "WO",
-    primaryColor: "#3E5E3A",
-    logoSrc: "/logos/waverley_oaks.png",
+    id: "champlain_college",
+    name: "Champlain",
+    shortName: "CC",
+    primaryColor: "#1f5592", // champlainCG2 (first in brandingColors order)
+    logoSrc: "/logos/champlain_college.png",
   },
   {
-    id: "umsl",
-    name: "UMSL",
-    shortName: "U",
-    primaryColor: "#A8242E",
-    logoSrc: "/logos/umsl.png",
+    id: "csun",
+    name: "CSUN",
+    shortName: "CS",
+    primaryColor: "#000000", // black (first in brandingColors order)
+    logoSrc: "/logos/csun.png",
+  },
+  {
+    id: "gym_it",
+    name: "GymIt",
+    shortName: "GI",
+    primaryColor: "#005fbd", // gymITCG2
+    logoSrc: "/logos/gym_it.png",
+  },
+  {
+    id: "marist",
+    name: "Marist",
+    shortName: "M",
+    primaryColor: "#ee3232", // maristCG2
+    logoSrc: "/logos/marist.png",
   },
   {
     id: "niagara",
     name: "Niagara",
     shortName: "N",
-    primaryColor: "#4B2A6B",
+    primaryColor: "#592d82", // niagaraCG1
     logoSrc: "/logos/niagara.png",
   },
   {
-    id: "clemson",
-    name: "Clemson",
-    shortName: "C",
-    primaryColor: "#F66733",
-    logoSrc: "/logos/clemson.png",
+    id: "pepperdine",
+    name: "Pepperdine",
+    shortName: "P",
+    primaryColor: "#ee7625", // pepperdineCG1
+    logoSrc: "/logos/pepperdine.png",
+  },
+  {
+    id: "suny_buffalo",
+    name: "Buffalo",
+    shortName: "UB",
+    primaryColor: "#374b9f", // buffaloCG1
+    logoSrc: "/logos/suny_buffalo.png",
+  },
+  {
+    id: "suny_oswego",
+    name: "Oswego",
+    shortName: "O",
+    primaryColor: "#00602e", // oswegoCG2
+    logoSrc: "/logos/suny_oswego.png",
+  },
+  {
+    id: "swarthmore",
+    name: "Swarthmore",
+    shortName: "S",
+    primaryColor: "#a30c33", // swarthmoreCG1
+    logoSrc: "/logos/swarthmore.png",
+  },
+  {
+    id: "umsl",
+    name: "UMSL",
+    shortName: "U",
+    primaryColor: "#a30c33", // umslCG1
+    logoSrc: "/logos/umsl.png",
+  },
+  {
+    id: "ut_dallas",
+    name: "UT Dallas",
+    shortName: "UTD",
+    primaryColor: "#e77725", // uTDallasCG2
+    logoSrc: "/logos/ut_dallas.png",
+  },
+  {
+    id: "ymca_middlesex",
+    name: "YMCA Middlesex",
+    shortName: "YM",
+    primaryColor: "#3c87c9", // ymcaCG1
+    logoSrc: "/logos/ymca_middlesex.png",
   },
 ];
 

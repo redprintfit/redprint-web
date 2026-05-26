@@ -128,9 +128,9 @@ export function CommunityView({ org }: { org: Org }) {
             heightOffset={20}
             rankDelta={1}
           />
-          {/* 1st place — gold, ACTIVE ORG (highlighted green). Uses the jpg
-              filename derived from the org id (CommunityView shows jpg, not
-              the transparent png the carousel uses). */}
+          {/* 1st place — gold, ACTIVE ORG (highlighted green). Uses the
+              org's logoSrc from orgs.ts (PNG); the decorative 2nd/3rd
+              positions still use the JPG variants from Gym Photos. */}
           <PodiumCell
             org={{
               shortName: org.shortName,
@@ -138,7 +138,7 @@ export function CommunityView({ org }: { org: Org }) {
               location: `${org.name.split(" ")[0]}, PA`,
               pointsBehind: "",
               color: orgColor,
-              logoSrc: `/logos/${org.id.replace(/-/g, "_")}.jpg`,
+              logoSrc: org.logoSrc,
             }}
             place={1}
             heightOffset={0}
