@@ -19,12 +19,17 @@ import { useTheme } from "@/lib/useTheme";
 export function AIChatbotView({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
   const isDark = useTheme() === "dark";
-  const pageTint = `${darken(orgColor, 65)}${isDark ? "40" : "1A"}`;
+  // Standard theme.pageBackground(for: orgColor) — iOS constants:
+  //   dark  -> darken(orgColor, 80%) @ 50% opacity
+  //   light -> darken(orgColor, 65%) @ 15% opacity
+  const pageTint = isDark
+    ? `${darken(orgColor, 80)}80`
+    : `${darken(orgColor, 65)}26`;
 
   return (
     <div
       className="light:bg-white light:text-black relative flex h-full flex-col overflow-hidden bg-black text-white"
-      style={{ backgroundImage: `linear-gradient(180deg, ${pageTint} 0%, ${pageTint} 100%)` }}
+      style={{ backgroundImage: `linear-gradient(${pageTint}, ${pageTint})` }}
     >
       {/* ---------- Top button rack (overlays scroll) ---------- */}
       <header className="absolute inset-x-0 top-0 z-10 flex items-start gap-1.5 px-2.5 pt-7">

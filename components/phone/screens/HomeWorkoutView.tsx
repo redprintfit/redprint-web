@@ -35,14 +35,20 @@ export function HomeWorkoutView({ org }: { org: Org }) {
   const infoCardBg = isDark ? orgLight60 : darken(orgColor, 65);
   const infoLabelColor = isDark ? "#1a1a1a" : "#ffffff";
 
-  // Page tint matches iOS: darken(orgColor, 65) @ 25% dark / 10% light.
-  const tintAlpha = isDark ? "40" : "1A";
+  // Standard theme.pageBackground(for: orgColor) — iOS constants:
+  //   dark  -> darken(orgColor, 80%) @ 50% opacity
+  //   light -> darken(orgColor, 65%) @ 15% opacity
+  const pageTint = isDark
+    ? `${darken(orgColor, 80)}80`
+    : `${darken(orgColor, 65)}26`;
 
   return (
     <div
       className="light:bg-white light:text-black relative flex h-full flex-col overflow-hidden bg-black text-white"
       style={{
-        backgroundImage: `linear-gradient(180deg, ${orgDark65}${tintAlpha} 0%, ${orgDark65}${isDark ? "1f" : "0d"} 100%)`,
+        // Solid-color overlay on top of the bg-base (black/white), matches
+        // iOS ZStack { theme.bgColor; tinted-org }.
+        backgroundImage: `linear-gradient(${pageTint}, ${pageTint})`,
       }}
     >
 

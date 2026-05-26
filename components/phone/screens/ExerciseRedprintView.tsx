@@ -9,6 +9,18 @@ const ADD_GREEN = "rgb(34, 197, 94)"; // .green — Add Exercise gradient end
 const BLOB_BG = "#3a3340"; // BlobAvatarView idle placeholder
 
 /**
+ * iOS theme.pageBackground(for: orgColor) — used by the bottom sheet
+ * (and by other org-tinted backgrounds across the app).
+ *   dark  -> darken(orgColor, 80%) @ 50% opacity
+ *   light -> darken(orgColor, 65%) @ 15% opacity
+ */
+function pageTint(orgColor: string, isDark: boolean): string {
+  return isDark
+    ? `${darken(orgColor, 80)}80`
+    : `${darken(orgColor, 65)}26`;
+}
+
+/**
  * Exercise detail (Glute Drive) — video hero + bottom sheet.
  * Faithfully ported from
  * Redprint5/Shared SubViews/ExerciseRedprintView.swift.
@@ -22,7 +34,8 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
   const orgColor = org.primaryColor;
   const orgDarker25 = darken(orgColor, 25);
   const orgDarker45 = darken(orgColor, 45);
-  const _isDark = useTheme() === "dark";
+  const isDark = useTheme() === "dark";
+  const tint = pageTint(orgColor, isDark);
 
   return (
     <div className="flex h-full flex-col bg-black">
@@ -51,12 +64,13 @@ export function ExerciseRedprintView({ org }: { org: Org }) {
       </div>
 
       {/* ============================================================
-          Bottom sheet (modal at small detent) — sizes to content so
-          there's no empty space between the carousel and the footer.
-          Pulled up over the video so the rounded top clips the video,
-          not the black bg.
+          Bottom sheet (modal at small detent) — bg = theme.pageBackground
+          (for: orgColor): base black/white + org-tinted overlay.
           ============================================================ */}
-      <div className="light:bg-[#fdf6f0] light:text-black -mt-3 flex flex-col rounded-t-2xl bg-[#15090a] text-white">
+      <div
+        className="light:bg-white light:text-black -mt-3 flex flex-col rounded-t-2xl bg-black text-white"
+        style={{ backgroundImage: `linear-gradient(${tint}, ${tint})` }}
+      >
         {/* Drag indicator */}
         <div className="flex justify-center pt-1.5">
           <div className="light:bg-black/25 h-[3px] w-7 rounded-full bg-white/30" />
