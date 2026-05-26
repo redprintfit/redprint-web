@@ -133,11 +133,29 @@ export function HomeWorkoutView({ org }: { org: Org }) {
         {/* Expanded exercise card (Barbell Bench Press) */}
         <ExerciseCard org={org} orgDark65={orgDark65} isDark={isDark} />
 
-        {/* Collapsed exercise rows */}
-        <div className="mt-1 space-y-1">
-          <CollapsedExercise name="Barbell Incline Bench Press" sets={4} />
-          <CollapsedExercise name="Dumbbell Incline Bench Press" sets={3} />
-          <CollapsedExercise name="Dumbbell Fly" sets={3} />
+        {/* Collapsed exercise rows — same bg as the expanded card */}
+        <div className="mt-3 space-y-1.5">
+          <CollapsedExercise
+            name="Barbell Incline Bench Press"
+            sets={4}
+            org={org}
+            orgDark65={orgDark65}
+            isDark={isDark}
+          />
+          <CollapsedExercise
+            name="Dumbbell Incline Bench Press"
+            sets={3}
+            org={org}
+            orgDark65={orgDark65}
+            isDark={isDark}
+          />
+          <CollapsedExercise
+            name="Dumbbell Fly"
+            sets={3}
+            org={org}
+            orgDark65={orgDark65}
+            isDark={isDark}
+          />
         </div>
       </div>
 
@@ -360,24 +378,49 @@ function ExerciseCard({
   );
 }
 
-function CollapsedExercise({ name, sets }: { name: string; sets: number }) {
+function CollapsedExercise({
+  name,
+  sets,
+  org,
+  orgDark65,
+  isDark,
+}: {
+  name: string;
+  sets: number;
+  org: Org;
+  orgDark65: string;
+  isDark: boolean;
+}) {
+  // Match the expanded ExerciseCard bg formula exactly.
+  const cardBg = isDark
+    ? `${orgDark65}66`
+    : `${darken(org.primaryColor, 50)}18`;
+
   return (
-    <div className="light:bg-black/[0.04] light:text-black flex items-center justify-between rounded-[12px] bg-white/[0.05] px-3 py-2 text-white">
+    <div
+      className="light:text-black flex items-center justify-between rounded-[14px] px-3 py-2.5 text-white"
+      style={{
+        backgroundColor: cardBg,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+      }}
+    >
       <span
-        className="text-[11px] leading-tight"
+        className="text-[12px] leading-tight"
         style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
       >
         {name}
       </span>
       <div className="flex items-center gap-1">
         <span
-          className="light:text-black text-[10px] text-white"
+          className="light:text-black text-[11px] text-white"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
           {sets}
         </span>
-        <span className="light:text-black/55 text-[7px] text-white/55">sets</span>
-        <span className="light:text-black/65 ml-0.5 text-[8px] text-white/65">⌄</span>
+        <span className="light:text-black/55 text-[8px] text-white/55">sets</span>
+        <span className="light:text-black/65 ml-0.5 inline-flex items-center text-white/65">
+          <ChevronDown />
+        </span>
       </div>
     </div>
   );
@@ -558,7 +601,7 @@ function ChevronDown() {
 
 function ChevronUp() {
   return (
-    <svg viewBox="0 0 16 16" className="h-3 w-3 fill-none stroke-white/65" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 16 16" className="light:stroke-black/65 h-3 w-3 fill-none stroke-white/65" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="4,10 8,6 12,10" />
     </svg>
   );
