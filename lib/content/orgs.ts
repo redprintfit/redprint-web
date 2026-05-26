@@ -16,6 +16,13 @@ export type Org = {
  */
 export const orgs: Org[] = [
   {
+    id: "waverley_oaks",
+    name: "Waverley Oaks",
+    shortName: "WO",
+    primaryColor: "#ee5b26", // waverleyCG1
+    logoSrc: "/logos/waverley_oaks.png",
+  },
+  {
     id: "az_western",
     name: "AZ Western",
     shortName: "AZW",
