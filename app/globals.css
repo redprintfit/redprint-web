@@ -34,7 +34,7 @@
   --color-fg-base: #1a0e0d;
   --color-fg-muted: #6b5d58;
   --paper-opacity: 0.1;
-  --headline-shadow: 6px 6px 0 rgba(0, 0, 0, 0.1);
+  --headline-shadow: 6px 6px 0 rgba(0, 0, 0, 0.05);
 }
 
 /* Org-tinted background. Hero sets `--org-bg-dark` (darken) and
