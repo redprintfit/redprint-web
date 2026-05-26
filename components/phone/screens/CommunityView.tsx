@@ -514,7 +514,7 @@ function TabBar({ org }: { org: Org }) {
         preserveAspectRatio="none"
         className="absolute inset-0 h-full w-full"
       >
-        <path d={path} fill={orgColor} />
+        <path d={path} fill={darken(orgColor, 50)} />
       </svg>
 
       {/* Tab items — positioned with iOS-style bottom padding so they
