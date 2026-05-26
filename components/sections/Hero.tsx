@@ -15,8 +15,8 @@ import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 
 const HEADLINE = "Fitness AI that knows your gym";
-const TICK_ORG_MS = 5000;
-const TICK_PHONE_MS = 10000;
+const TICK_ORG_MS = 10000;
+const TICK_PHONE_MS = 20000;
 
 /** Single duration + easing reused across bg, carousel, phone slot transitions. */
 const ROTATION_DURATION = 0.6;
