@@ -19,6 +19,23 @@ type Props = {
   /** Pixel size of the avatar (assumed square). */
   size?: number;
   className?: string;
+  /**
+   * If provided, overrides the internal time-driven ring rotation with an
+   * externally controlled value (radians). Used by the scroll sequence so
+   * the loading wheel only spins as the user scrolls.
+   */
+  ringRot?: number;
+  /**
+   * Override the loading-mode ring radius fraction (default 0.28). Used
+   * to make the 6 dots sit at the same radius as the redprint emblem's
+   * outer circles.
+   */
+  ringRadiusFrac?: number;
+  /**
+   * Override the loading-mode dot radius fraction (default 0.06). Used
+   * to make the 6 dots the same size as the emblem's filled circles.
+   */
+  dotRadiusFrac?: number;
 };
 
 /**
@@ -26,7 +43,14 @@ type Props = {
  * Renders to a <canvas> at devicePixelRatio resolution. The color follows
  * the marketing site's theme (white in dark mode, dark in light mode).
  */
-export function BlobAvatar({ mode = "idle", size = 200, className }: Props) {
+export function BlobAvatar({
+  mode = "idle",
+  size = 200,
+  className,
+  ringRot: externalRingRot,
+  ringRadiusFrac,
+  dotRadiusFrac,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDark = useTheme() === "dark";
   const color = isDark ? "#ffffff" : "#1a0e0d";
@@ -46,9 +70,15 @@ export function BlobAvatar({ mode = "idle", size = 200, className }: Props) {
     snapPos: [] as { x: number; y: number }[],
     snapRadii: [] as number[],
     lastNow: 0,
+    externalRingRot: externalRingRot as number | undefined,
+    ringRadiusFrac: ringRadiusFrac as number | undefined,
+    dotRadiusFrac: dotRadiusFrac as number | undefined,
   });
   stateRef.current.color = color;
   stateRef.current.size = size;
+  stateRef.current.externalRingRot = externalRingRot;
+  stateRef.current.ringRadiusFrac = ringRadiusFrac;
+  stateRef.current.dotRadiusFrac = dotRadiusFrac;
 
   // Detect mode changes to begin a transition.
   useEffect(() => {
@@ -58,12 +88,15 @@ export function BlobAvatar({ mode = "idle", size = 200, className }: Props) {
     // Snapshot current positions/radii so the transition starts smoothly.
     const cx = s.size / 2;
     const cy = s.size / 2;
+    const curRingRot = s.externalRingRot ?? s.ringRot;
     s.snapPos =
       s.targetMode === "idle"
         ? idlePositions(s.t, s.size, cx, cy)
-        : ringPositions(s.ringRot, s.size, cx, cy);
+        : ringPositions(curRingRot, s.size, cx, cy, s.ringRadiusFrac);
     s.snapRadii =
-      s.targetMode === "idle" ? idleRadii(s.t, s.size) : dotRadii(s.size);
+      s.targetMode === "idle"
+        ? idleRadii(s.t, s.size)
+        : dotRadii(s.size, s.dotRadiusFrac);
 
     s.currentMode = s.targetMode;
     s.targetMode = mode;
@@ -89,7 +122,11 @@ export function BlobAvatar({ mode = "idle", size = 200, className }: Props) {
       const dt = s.lastNow === 0 ? 0 : Math.min(t - s.lastNow, 0.1);
       s.lastNow = t;
       s.t += dt;
-      s.ringRot += ROT_SPEED * dt;
+      // External control wins — when an external ringRot is supplied the
+      // wheel only turns as that value moves (e.g. tied to scroll). The
+      // internal time-driven advance still runs so the idle blob keeps
+      // breathing if mode flips back.
+      if (s.externalRingRot === undefined) s.ringRot += ROT_SPEED * dt;
 
       if (s.transP < 1.0) {
         s.transP = Math.min((s.t - s.transStart) / TRANS_DUR, 1.0);
@@ -115,10 +152,17 @@ export function BlobAvatar({ mode = "idle", size = 200, className }: Props) {
       let positions: { x: number; y: number }[];
       let radii: number[];
 
+      const ringRotNow = s.externalRingRot ?? s.ringRot;
       const idleP = idlePositions(s.t, s.size, cx, cy);
       const idleR = idleRadii(s.t, s.size);
-      const ringP = ringPositions(s.ringRot, s.size, cx, cy);
-      const ringR = dotRadii(s.size);
+      const ringP = ringPositions(
+        ringRotNow,
+        s.size,
+        cx,
+        cy,
+        s.ringRadiusFrac,
+      );
+      const ringR = dotRadii(s.size, s.dotRadiusFrac);
 
       if (s.transP >= 1.0) {
         if (s.targetMode === "idle") {

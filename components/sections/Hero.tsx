@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, type MotionValue } from "framer-motion";
 import { gsap } from "gsap";
 import { orgs, darken, lighten, type Org } from "@/lib/content/orgs";
 import { PhoneFrame } from "@/components/phone/PhoneFrame";
@@ -9,10 +9,11 @@ import { ExerciseRedprintView } from "@/components/phone/screens/ExerciseRedprin
 import { AIChatbotView } from "@/components/phone/screens/AIChatbotView";
 import { CommunityView } from "@/components/phone/screens/CommunityView";
 import { HomeWorkoutView } from "@/components/phone/screens/HomeWorkoutView";
-import { ExerciseHistoryAnalysisView } from "@/components/phone/screens/ExerciseHistoryAnalysisView";
+import { FinishedWorkoutSummaryView } from "@/components/phone/screens/FinishedWorkoutSummaryView";
 import { OrgCarousel } from "@/components/sections/OrgCarousel";
 import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
+import { RequestGymModal } from "@/components/RequestGymModal";
 
 const HEADLINE = "Fitness AI that knows your gym";
 const TICK_ORG_MS = 5000;
@@ -25,8 +26,8 @@ const ROTATION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const SCREENS = [
   { id: "home-workout", Component: HomeWorkoutView },
   { id: "ai-chatbot", Component: AIChatbotView },
-  { id: "exercise-history", Component: ExerciseHistoryAnalysisView },
   { id: "exercise-redprint", Component: ExerciseRedprintView },
+  { id: "workout-summary", Component: FinishedWorkoutSummaryView },
   { id: "community", Component: CommunityView },
 ] as const;
 
@@ -34,20 +35,38 @@ const SCREENS = [
  * 5 slots — 3 visible (front / mid-fan / back-fan), 2 hidden (off-stage left).
  * Phones cycle through all 5 positions; only the first three are visible.
  */
-function slotTransforms(slide: number) {
+/**
+ * Slot transforms. `narrow` shrinks the fan offsets so they're proportional
+ * to the smaller phone width used in the stacked layout (≈200px vs 260px).
+ */
+function slotTransforms(slide: number, narrow: boolean) {
+  const k = narrow ? 0.65 : 1; // 170/260 ≈ 0.65
   // `y: 0` is explicit so the fan phones' GSAP initial `y: 60` (the
   // rise-up offset for the front phone) doesn't carry over to them.
   return [
     { x: -slide, y: 0, rotate: 0, scale: 1, opacity: 1 }, // 0: front
-    { x: -slide - 60, y: 0, rotate: -12, scale: 0.9, opacity: 1 }, // 1: mid-fan
-    { x: -slide - 115, y: 0, rotate: -24, scale: 0.8, opacity: 1 }, // 2: back-fan
-    { x: -slide - 180, y: 0, rotate: -36, scale: 0.7, opacity: 0 }, // 3: hidden
-    { x: -slide - 240, y: 0, rotate: -48, scale: 0.6, opacity: 0 }, // 4: hidden
+    { x: -slide - 60 * k, y: 0, rotate: -12, scale: 0.9, opacity: 1 }, // 1: mid-fan
+    { x: -slide - 115 * k, y: 0, rotate: -24, scale: 0.8, opacity: 1 }, // 2: back-fan
+    { x: -slide - 180 * k, y: 0, rotate: -36, scale: 0.7, opacity: 0 }, // 3: hidden
+    { x: -slide - 240 * k, y: 0, rotate: -48, scale: 0.6, opacity: 0 }, // 4: hidden
   ];
 }
 const SLOT_Z = [40, 30, 20, 10, 0];
 
-export function Hero() {
+/**
+ * Optional scroll-driven props. When `ScrollSequence` wraps Hero, it pipes
+ * MotionValues down for the logo's rotation/opacity (so the logo can spin
+ * with the scroll, then fade as a loading-mode BlobAvatar takes over).
+ * `logoSlotRef` exposes the logo's DOM node so the parent can measure its
+ * on-screen position and place the BlobAvatar overlay exactly on top.
+ */
+type HeroProps = {
+  logoRotation?: MotionValue<number>;
+  logoOpacity?: MotionValue<number>;
+  logoSlotRef?: React.Ref<HTMLDivElement>;
+};
+
+export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {}) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const frontPhoneRef = useRef<HTMLDivElement>(null);
   const fanLeftRef = useRef<HTMLDivElement>(null);
@@ -58,10 +77,32 @@ export function Hero() {
 
   const [orgTick, setOrgTick] = useState(0);
   const [phoneTick, setPhoneTick] = useState(0);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
-  const slide = 220;
+
+  // The side-by-side text column shrinks as the viewport narrows (its width
+  // is `min(580px, calc(50% - 50px))`, so the gap between the front phone
+  // and the text never collapses). Below ~680px even the widest word in the
+  // headline ("Fitness") no longer fits in that shrinking column — at that
+  // point we switch to a stacked layout, phones on top, and recentre the
+  // phones (slide=0) so they fan out from the horizontal middle instead of
+  // being shifted left.
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 679px)");
+    const update = () => setIsNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  const slide = isNarrow ? 0 : 220;
   const slideRef = useRef(slide);
+  const isNarrowRef = useRef(isNarrow);
+  useEffect(() => {
+    slideRef.current = slide;
+    isNarrowRef.current = isNarrow;
+  }, [slide, isNarrow]);
 
   // Active org derived from org tick (5s).
   const activeOrg: Org = orgs[orgTick % orgs.length];
@@ -99,7 +140,7 @@ export function Hero() {
       if (played) return;
       played = true;
 
-      const targets = slotTransforms(slideRef.current);
+      const targets = slotTransforms(slideRef.current, isNarrowRef.current);
       const tl = gsap.timeline({
         onComplete: () => setOpeningDone(true),
       });
@@ -186,7 +227,7 @@ export function Hero() {
     };
   }, [openingDone]);
 
-  const targets = slotTransforms(slide);
+  const targets = slotTransforms(slide, isNarrow);
 
   // Each phone's slot = (screenIndex - phoneTick) mod N (5).
   // Slots 0/1/2 are visible front/mid/back; 3/4 are hidden off-stage.
@@ -210,7 +251,9 @@ export function Hero() {
       />
 
       <div className="relative z-10 mx-auto h-full max-w-7xl">
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        {/* Phones — full container at ≥680px, top ~52% of section below
+            that, so they always sit above (and never overlap) the text. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[48%] flex items-center justify-center min-[680px]:inset-0">
           {SCREENS.map(({ id, Component }, i) => {
             const slot = slotForScreen(i);
             // Refs only used during opening sequence (slots 0/1/2 get the
@@ -242,7 +285,7 @@ export function Hero() {
                 transition={{ duration: ROTATION_DURATION, ease: ROTATION_EASE }}
                 style={{ zIndex: SLOT_Z[slot] }}
               >
-                <PhoneFrame className="w-[260px]">
+                <PhoneFrame width={isNarrow ? 170 : 260}>
                   <Component org={activeOrg} />
                 </PhoneFrame>
               </motion.div>
@@ -250,14 +293,32 @@ export function Hero() {
           })}
         </div>
 
-        <div className="absolute inset-y-0 right-6 flex w-[580px] max-w-[calc(100vw-3rem)] flex-col items-start justify-center gap-8 md:right-12">
+        {/* Text column — right side at ≥680px, bottom slab below that. On
+            narrow it occupies the lower 48% of the section, mirroring the
+            phones' top 52%, so the two never overlap. On wide its width is
+            `min(580px, calc(50% - 50px))` — that shrinks the column as the
+            viewport narrows, which makes the headline wrap into more lines
+            (rather than getting smaller) while preserving a ≥50px gap from
+            the front phone. Text and button sizes stay fixed across breakpoints. */}
+        <div className="absolute left-4 right-4 top-[52%] bottom-0 flex flex-col items-start justify-start gap-8 min-[680px]:left-auto min-[680px]:right-12 min-[680px]:top-0 min-[680px]:bottom-0 min-[680px]:w-[min(580px,_calc(50%_-_80px))] min-[680px]:justify-center">
+          {/* Two-layer wrapper so GSAP (opening fade/slide) and Framer
+              Motion (scroll-driven rotate/opacity) don't fight over the
+              same inline style. GSAP owns the outer ref; Framer owns the
+              inner motion.div. `logoSlotRef` exposes the inner element so
+              the scroll-sequence parent can measure where to place a
+              BlobAvatar overlay. */}
           <div ref={markRef} className="text-fg-base">
-            <RedprintMark className="h-14 w-14" />
+            <motion.div
+              ref={logoSlotRef}
+              style={{ rotate: logoRotation, opacity: logoOpacity }}
+            >
+              <RedprintMark className="h-16 w-16" />
+            </motion.div>
           </div>
 
           <h1
-            className="text-fg-base text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-[4.25rem] [text-shadow:var(--headline-shadow)]"
-            style={{ fontWeight: 800 }}
+            className="text-fg-base text-[4.25rem] font-black leading-[1.05] tracking-tight [text-shadow:var(--headline-shadow)]"
+            style={{ fontWeight: 900 }}
           >
             <TypewriterText text={HEADLINE} start={typingStarted} />
           </h1>
@@ -270,7 +331,7 @@ export function Hero() {
             />
           </div>
 
-          <div ref={ctasRef} className="mt-6 flex items-center gap-3">
+          <div ref={ctasRef} className="mt-6 flex flex-wrap items-center gap-3">
             <a
               href="/for-gyms"
               className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition"
@@ -278,16 +339,21 @@ export function Hero() {
               Redprint for gyms{" "}
               <span className="text-lg leading-none">›</span>
             </a>
-            <a
-              href="#request"
+            <button
+              type="button"
+              onClick={() => setRequestModalOpen(true)}
               className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition"
             >
               Request your gym{" "}
               <span className="text-lg leading-none">›</span>
-            </a>
+            </button>
           </div>
         </div>
       </div>
+      <RequestGymModal
+        open={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+      />
     </section>
   );
 }

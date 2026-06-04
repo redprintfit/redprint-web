@@ -11,7 +11,25 @@ type Props = {
   variant?: "light" | "dark";
   /** Background of the screen interior. Defaults to black->white per theme. */
   screenBg?: string;
+  /**
+   * Rendered width of the phone, in CSS pixels. Internally the phone is
+   * always laid out at the canonical 260px design size — when `width`
+   * differs, we scale the whole device (frame, screen, status bar, every
+   * child) with a single `transform: scale()`, so all of the fixed-pixel
+   * sizes inside the screens stay perfectly proportional. Defaults to 260.
+   */
+  width?: number;
+  /**
+   * Suppress the built-in box-shadow glow so the caller can render
+   * (and independently animate) the glow themselves — used by ghost
+   * phone copies that fade their halo in separately from the body.
+   */
+  shadowless?: boolean;
 };
+
+const DESIGN_WIDTH = 260;
+const ASPECT_W = 9;
+const ASPECT_H = 19.5;
 
 /**
  * iPhone-shaped device shell. Children render inside the screen area
@@ -22,44 +40,67 @@ export function PhoneFrame({
   className,
   variant,
   screenBg = "bg-black light:bg-white",
+  width = DESIGN_WIDTH,
+  shadowless = false,
 }: Props) {
+  const scale = width / DESIGN_WIDTH;
+  const designHeight = DESIGN_WIDTH * (ASPECT_H / ASPECT_W);
+
   return (
     <div
-      className={cn(
-        "relative aspect-[9/19.5] w-[260px] shrink-0 rounded-[44px] bg-neutral-950 p-[5px] shadow-[0_25px_60px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10",
-        className,
-      )}
+      className={cn("relative shrink-0", className)}
+      style={{
+        width,
+        height: width * (ASPECT_H / ASPECT_W),
+      }}
     >
       <div
-        className={cn(
-          "relative h-full w-full overflow-hidden rounded-[40px]",
-          screenBg,
-        )}
+        className="absolute left-0 top-0 origin-top-left"
+        style={{
+          width: DESIGN_WIDTH,
+          height: designHeight,
+          transform: `scale(${scale})`,
+        }}
       >
-        {/* Status bar — time + signal/wifi/battery */}
         <div
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 pt-[6px] text-[8.5px] font-semibold",
-            variant === "light"
-              ? "text-white"
-              : variant === "dark"
-                ? "text-black"
-                : "text-white light:text-black",
+            "relative h-full w-full rounded-[44px] bg-neutral-950 p-[5px] ring-1 ring-white/10",
+            !shadowless &&
+              "shadow-[0_0_100px_-15px_rgba(255,255,255,0.14)] light:shadow-[0_25px_60px_-20px_rgba(0,0,0,0.6)]",
           )}
         >
-          <span className="tracking-tight">3:48</span>
-          <span className="flex items-center gap-[3px]">
-            <SignalBars />
-            <WifiIcon />
-            <BatteryIcon />
-          </span>
+          <div
+            className={cn(
+              "relative h-full w-full overflow-hidden rounded-[40px]",
+              screenBg,
+            )}
+          >
+            {/* Status bar — time + signal/wifi/battery */}
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 pt-[6px] text-[8.5px] font-semibold",
+                variant === "light"
+                  ? "text-white"
+                  : variant === "dark"
+                    ? "text-black"
+                    : "text-white light:text-black",
+              )}
+            >
+              <span className="tracking-tight">3:48</span>
+              <span className="flex items-center gap-[3px]">
+                <SignalBars />
+                <WifiIcon />
+                <BatteryIcon />
+              </span>
+            </div>
+
+            {/* Dynamic island */}
+            <div className="pointer-events-none absolute left-1/2 top-[5px] z-40 h-[18px] w-[68px] -translate-x-1/2 rounded-full bg-black" />
+
+            {/* Screen content — fills full height, child handles top padding */}
+            <div className="relative h-full w-full">{children}</div>
+          </div>
         </div>
-
-        {/* Dynamic island */}
-        <div className="pointer-events-none absolute left-1/2 top-[5px] z-40 h-[18px] w-[68px] -translate-x-1/2 rounded-full bg-black" />
-
-        {/* Screen content — fills full height, child handles top padding */}
-        <div className="relative h-full w-full">{children}</div>
       </div>
     </div>
   );

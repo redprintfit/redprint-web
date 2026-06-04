@@ -130,7 +130,7 @@ export function HomeWorkoutView({ org }: { org: Org }) {
           </button>
         </div>
 
-        {/* Expanded exercise card (Barbell Bench Press) */}
+        {/* Expanded exercise card (Lat Pulldown) */}
         <ExerciseCard org={org} orgDark65={orgDark65} isDark={isDark} />
 
         {/* Collapsed exercise rows — same bg as the expanded card */}
@@ -162,8 +162,9 @@ export function HomeWorkoutView({ org }: { org: Org }) {
       {/* ---------- Floating NFC cluster button (peeks at bottom) ---------- */}
       <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
         <div
+          data-tracking-anchor="speed"
           className="flex h-[44px] w-[44px] items-center justify-center rounded-full shadow-[0_2px_3px_rgba(0,0,0,0.25),0_-2px_3px_rgba(255,255,255,0.08)]"
-          style={{ backgroundColor: orgColor }}
+          style={{ backgroundColor: darken(orgColor, 50) }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -249,6 +250,7 @@ function FinishButton() {
 function AllExercisesButton() {
   return (
     <button
+      data-tracking-anchor="confidence"
       className="flex h-[34px] flex-1 flex-col justify-center rounded-[8px] px-1.5 text-left"
       style={{
         background: "linear-gradient(to top right, #047857, #22c55e)",
@@ -274,6 +276,7 @@ function AllExercisesButton() {
 function WrenchButton() {
   return (
     <button
+      data-tracking-anchor="depth"
       className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px]"
       style={{
         backgroundColor: REDPRINT_MID_GRAY,
@@ -318,14 +321,14 @@ function ExerciseCard({
           className="text-[14px] leading-tight"
           style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}
         >
-          Barbell Bench Press
+          Lat Pulldown
         </span>
         <ChevronUp />
       </div>
 
       {/* Action buttons row — 4 circles */}
       <div className="mt-1.5 flex items-center justify-around">
-        <CircleActionButton filled>
+        <CircleActionButton filled trackingAnchor="access">
           <PlayIcon />
         </CircleActionButton>
         <CircleActionButton>
@@ -356,23 +359,31 @@ function ExerciseCard({
           <div className="w-[14px]" />
         </div>
 
-        <SetRow num={1} reps="8" weight="135" />
-        <SetRow num={2} reps="8" weight="135" />
+        <SetRow num={1} reps="8" weight="135" lastImported memoryAnchor />
+        <SetRow num={2} reps="8" weight="135" lastImported />
         <SetRow num={3} reps="8" weight="135" />
         <SetRow num={4} reps="8" weight="135" />
       </div>
 
-      {/* Add set */}
+      {/* Add set — full-width subtle green bar with text-left, +-icon
+          in a small bordered circle on the right. Matches the wireframe's
+          green stripe at the bottom of the expanded exercise card. */}
       <button
         className="mb-1 flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-[10px] font-semibold"
         style={{
+          backgroundColor: `${REDPRINT_GREEN}1F`,
           color: REDPRINT_GREEN,
         }}
       >
         <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700 }}>
           Add set
         </span>
-        <PlusIcon color={REDPRINT_GREEN} />
+        <span
+          className="flex h-[14px] w-[14px] items-center justify-center rounded-full"
+          style={{ border: `1px solid ${REDPRINT_GREEN}` }}
+        >
+          <PlusIcon color={REDPRINT_GREEN} />
+        </span>
       </button>
     </div>
   );
@@ -429,17 +440,24 @@ function CollapsedExercise({
 function CircleActionButton({
   filled,
   outlined,
+  trackingAnchor,
   children,
 }: {
   /** Purple solid fill (matches the iOS play button). */
   filled?: boolean;
   /** Stroked circle with the same icon tint. */
   outlined?: boolean;
+  /** Optional value for `data-tracking-anchor` so this button can be
+   *  targeted by a connector line (e.g. learning-cards ACCESS). */
+  trackingAnchor?: string;
   children: React.ReactNode;
 }) {
   if (filled) {
     return (
-      <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-purple-500 text-white">
+      <div
+        data-tracking-anchor={trackingAnchor}
+        className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-purple-500 text-white"
+      >
         {children}
       </div>
     );
@@ -478,16 +496,22 @@ function SetRow({
   lastImported,
   reps,
   weight,
+  memoryAnchor,
 }: {
   num: number;
   lastImported?: boolean;
   reps: string;
   weight: string;
+  /** When true, marks the number cell with `data-tracking-anchor="memory"`
+   *  so the MEMORY connector line lands on the blue "Last" badge. Only
+   *  set on the first lastImported row to avoid duplicate matches. */
+  memoryAnchor?: boolean;
 }) {
   return (
     <div className="flex items-center gap-1 px-0.5">
       {/* Set number cell */}
       <div
+        data-tracking-anchor={memoryAnchor ? "memory" : undefined}
         className="flex h-[24px] w-[26px] flex-col items-center justify-center rounded-[5px]"
         style={{
           backgroundColor: lastImported ? `${REDPRINT_BLUE}33` : "transparent",

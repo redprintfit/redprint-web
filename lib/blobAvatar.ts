@@ -374,8 +374,9 @@ export function ringPositions(
   size: number,
   cx: number,
   cy: number,
+  ringRadiusFrac: number = RING_R_FRAC,
 ): Pt[] {
-  const rr = size * RING_R_FRAC;
+  const rr = size * ringRadiusFrac;
   const out: Pt[] = [];
   for (let k = 0; k < N_BLOBS; k++) {
     const angle = (2 * Math.PI * k) / N_BLOBS + ringRot;
@@ -384,8 +385,11 @@ export function ringPositions(
   return out;
 }
 
-export function dotRadii(size: number): number[] {
-  return new Array(N_BLOBS).fill(size * DOT_R_FRAC);
+export function dotRadii(
+  size: number,
+  dotRadiusFrac: number = DOT_R_FRAC,
+): number[] {
+  return new Array(N_BLOBS).fill(size * dotRadiusFrac);
 }
 
 export function easeInOut(v: number): number {

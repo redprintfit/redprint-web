@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { type MotionValue } from "framer-motion";
 
 type Props = {
   text: string;
@@ -9,6 +10,19 @@ type Props = {
   /** Ms per character (default 42). */
   speed?: number;
   className?: string;
+  /**
+   * Optional scroll-tied progress MotionValue (0 → 1). When provided, the
+   * `start` / `speed` time-based path is bypassed entirely — chars appear
+   * in direct proportion to the value. Cursor stays visible while
+   * progress is strictly between 0 and 1, then hides.
+   */
+  progress?: MotionValue<number>;
+  /**
+   * When true, characters appear from the END of the string toward the
+   * START (i.e., the suffix grows leftward). Pairs with right-aligned
+   * text so chars accumulate toward the trailing edge.
+   */
+  reverse?: boolean;
 };
 
 /**
@@ -23,11 +37,36 @@ type Props = {
  * Reserves final-layout width via a visibility:hidden tail span so the
  * surrounding layout doesn't reflow while typing.
  */
-export function TypewriterText({ text, start, speed = 42, className }: Props) {
+export function TypewriterText({
+  text,
+  start,
+  speed = 42,
+  className,
+  progress,
+  reverse = false,
+}: Props) {
   const [shown, setShown] = useState(0);
   const [cursorOn, setCursorOn] = useState(false);
 
+  // Scroll-tied path. When `progress` is supplied, the typewriter mirrors
+  // it directly — shown chars = round(text.length * p), cursor visible
+  // mid-type, hidden at the bounds.
   useEffect(() => {
+    if (!progress) return;
+    const apply = (p: number) => {
+      const c = Math.max(0, Math.min(1, p));
+      setShown(Math.round(text.length * c));
+      setCursorOn(c > 0 && c < 1);
+    };
+    apply(progress.get());
+    return progress.on("change", apply);
+  }, [progress, text]);
+
+  // Time-based path. Skipped entirely when a scroll progress MV is
+  // controlling typing — we'd otherwise have two effects fighting over
+  // `shown`.
+  useEffect(() => {
+    if (progress) return;
     if (!start) {
       setShown(0);
       setCursorOn(false);
@@ -64,24 +103,45 @@ export function TypewriterText({ text, start, speed = 42, className }: Props) {
       timers.forEach(clearTimeout);
       if (typingInterval) clearInterval(typingInterval);
     };
-  }, [start, text, speed]);
+  }, [start, text, speed, progress]);
+
+  const cursor = (
+    <span
+      aria-hidden
+      className="inline-block"
+      style={{
+        width: "0.06em",
+        height: "0.85em",
+        marginLeft: "0.05em",
+        backgroundColor: "currentColor",
+        verticalAlign: "baseline",
+        transform: "translateY(0.08em)",
+        opacity: cursorOn ? 1 : 0,
+      }}
+    />
+  );
+
+  if (reverse) {
+    // Hidden PREFIX on the left reserves layout space; cursor sits at
+    // the typing point (just before the visible suffix); visible
+    // SUFFIX grows leftward as chars are typed in from the end.
+    const hidden = text.slice(0, text.length - shown);
+    const visible = text.slice(text.length - shown);
+    return (
+      <span className={className} aria-label={text}>
+        <span aria-hidden style={{ visibility: "hidden" }}>
+          {hidden}
+        </span>
+        {cursor}
+        <span aria-hidden>{visible}</span>
+      </span>
+    );
+  }
 
   return (
     <span className={className} aria-label={text}>
       <span aria-hidden>{text.slice(0, shown)}</span>
-      <span
-        aria-hidden
-        className="inline-block"
-        style={{
-          width: "0.06em",
-          height: "0.85em",
-          marginLeft: "0.05em",
-          backgroundColor: "currentColor",
-          verticalAlign: "baseline",
-          transform: "translateY(0.08em)",
-          opacity: cursorOn ? 1 : 0,
-        }}
-      />
+      {cursor}
       <span aria-hidden style={{ visibility: "hidden" }}>
         {text.slice(shown)}
       </span>

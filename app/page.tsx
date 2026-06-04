@@ -1,13 +1,13 @@
-import { Hero } from "@/components/sections/Hero";
-import { BlobAvatarDemo } from "@/components/BlobAvatarDemo";
+import { ScrollSequence } from "@/components/sections/ScrollSequence";
+import { SiteFooter } from "@/components/layout/SiteFooter";
+import { HashScrollTarget } from "@/components/HashScrollTarget";
 
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <section className="flex h-screen items-center justify-center">
-        <BlobAvatarDemo />
-      </section>
+      <HashScrollTarget />
+      <ScrollSequence />
+      <SiteFooter />
     </>
   );
 }

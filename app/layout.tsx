@@ -1,14 +1,34 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Outfit, Inter, Bitcount_Grid_Single } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/layout/Nav";
-import { Footer } from "@/components/layout/Footer";
 import { LenisProvider } from "@/components/animations/LenisProvider";
 
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
   weight: ["400", "500", "700", "800"],
+  display: "swap",
+});
+
+// Neutral grotesque for body / supporting text. Outfit stays the display
+// face (headlines, big numbers). Inter handles labels, descriptions,
+// and any small UI text inside the pillars / mini-visuals.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+// Bitcount Grid Single — dot-matrix pixel font. Each letter is
+// drawn as a dense grid of dots. Used by the testimonials section
+// to convert the field of small hollow dots into a sentence:
+// canvas → CCA (high alpha threshold) → one target per font-dot.
+const bitcountGrid = Bitcount_Grid_Single({
+  variable: "--font-bitcount-grid",
+  subsets: ["latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -28,7 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${outfit.variable} ${inter.variable} ${bitcountGrid.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />
       </head>
@@ -36,7 +60,6 @@ export default function RootLayout({
         <LenisProvider>
           <Nav />
           <main className="flex-1">{children}</main>
-          <Footer />
         </LenisProvider>
       </body>
     </html>

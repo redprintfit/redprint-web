@@ -7,6 +7,9 @@
 
 @theme {
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  /* Neutral body face. Use via `font-body` (Tailwind) or
+     `font-family: var(--font-body)`. */
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   /* Brand — PLACEHOLDER red, replace with exact hex from design. */
   --color-brand-red: #d83a3a;
@@ -51,4 +54,23 @@ body {
   background-color: var(--org-bg);
   color: var(--color-fg-base);
   transition: var(--transition-bg);
+}
+
+/* Film-grain keyframes — used by <Grain />. `steps(5)` timing makes the
+   background-image jump frame-to-frame instead of crossfading, which is
+   what gives the overlay an authentic shimmer. */
+@keyframes grain {
+  0%   { background-image: url('/grain/noise-1.png'); }
+  20%  { background-image: url('/grain/noise-2.png'); }
+  40%  { background-image: url('/grain/noise-3.png'); }
+  60%  { background-image: url('/grain/noise-4.png'); }
+  80%  { background-image: url('/grain/noise-5.png'); }
+  100% { background-image: url('/grain/noise-1.png'); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate"],
+  [style*="animation"] {
+    animation-play-state: paused !important;
+  }
 }

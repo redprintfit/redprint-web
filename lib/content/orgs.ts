@@ -16,6 +16,13 @@ export type Org = {
  */
 export const orgs: Org[] = [
   {
+    id: "marist",
+    name: "Marist",
+    shortName: "M",
+    primaryColor: "#ee3232", // maristCG2
+    logoSrc: "/logos/marist.png",
+  },
+  {
     id: "waverley_oaks",
     name: "Waverley Oaks",
     shortName: "WO",
@@ -49,13 +56,6 @@ export const orgs: Org[] = [
     shortName: "GI",
     primaryColor: "#005fbd", // gymITCG2
     logoSrc: "/logos/gym_it.png",
-  },
-  {
-    id: "marist",
-    name: "Marist",
-    shortName: "M",
-    primaryColor: "#ee3232", // maristCG2
-    logoSrc: "/logos/marist.png",
   },
   {
     id: "niagara",

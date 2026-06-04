@@ -190,6 +190,7 @@ export function CommunityView({ org }: { org: Org }) {
             subType="self-tracked"
             showFooter
             username="dan.p"
+            muscleCount={3}
           />
 
           <WorkoutPostCard
@@ -200,7 +201,45 @@ export function CommunityView({ org }: { org: Org }) {
             orgDark75={orgDark75}
             title="Push"
             subType="pre-planned"
-            showFooter={false}
+            showFooter
+            username="trayhupp"
+            muscleCount={3}
+          />
+
+          <WorkoutPostCard
+            org={org}
+            isDark={isDark}
+            orgDark65={orgDark65}
+            orgDark50={orgDark50}
+            orgDark75={orgDark75}
+            title="Lower 1"
+            subType="pre-planned"
+            showFooter
+            username="trayhupp"
+            muscleCount={1}
+          />
+
+          <WorkoutPostCard
+            org={org}
+            isDark={isDark}
+            orgDark65={orgDark65}
+            orgDark50={orgDark50}
+            orgDark75={orgDark75}
+            title="Untitled workout"
+            titleIsItalic
+            subType="self-tracked"
+            showFooter
+            username="dan.p"
+            muscleCount={1}
+          />
+
+          <NewToRedprintCard
+            org={org}
+            isDark={isDark}
+            orgDark65={orgDark65}
+            orgDark50={orgDark50}
+            orgDark75={orgDark75}
+            username="stmiller"
           />
         </div>
       </section>
@@ -381,6 +420,7 @@ function WorkoutPostCard({
   subType,
   showFooter,
   username,
+  muscleCount = 3,
 }: {
   org: Org;
   isDark: boolean;
@@ -392,6 +432,7 @@ function WorkoutPostCard({
   subType: "self-tracked" | "pre-planned";
   showFooter: boolean;
   username?: string;
+  muscleCount?: number;
 }) {
   // iOS post card: dark=darken65@25%, light=darken50@8%
   const cardBg = isDark ? `${orgDark65}40` : `${orgDark50}14`;
@@ -443,9 +484,9 @@ function WorkoutPostCard({
 
         {/* Featured item: muscle group dots — placeholder */}
         <div className="flex gap-0.5">
-          <MuscleDot />
-          <MuscleDot />
-          <MuscleDot />
+          {Array.from({ length: muscleCount }).map((_, i) => (
+            <MuscleDot key={i} />
+          ))}
         </div>
 
         <span className="light:text-black/40 text-[10px] leading-none text-white/40">
@@ -475,6 +516,82 @@ function WorkoutPostCard({
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+function NewToRedprintCard({
+  org,
+  isDark,
+  orgDark65,
+  orgDark50,
+  orgDark75,
+  username,
+}: {
+  org: Org;
+  isDark: boolean;
+  orgDark65: string;
+  orgDark50: string;
+  orgDark75: string;
+  username: string;
+}) {
+  // Same card-bg / footer-bg formula as WorkoutPostCard so it sits next to
+  // it without visual mismatch.
+  const cardBg = isDark ? `${orgDark65}40` : `${orgDark50}14`;
+  const footerBg = isDark ? `${orgDark75}50` : `${orgDark50}26`;
+
+  return (
+    <div
+      className="overflow-hidden rounded-[14px]"
+      style={{
+        backgroundColor: cardBg,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+      }}
+    >
+      {/* Top row: "+" badge + NEW TO REDPRINT label + chevron */}
+      <div className="flex items-center gap-1.5 px-2 py-2">
+        <div className="light:bg-black flex h-[14px] w-[14px] items-center justify-center rounded-full bg-white">
+          <svg
+            viewBox="0 0 16 16"
+            className="light:stroke-white h-2 w-2 stroke-black"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          >
+            <line x1="8" y1="3" x2="8" y2="13" />
+            <line x1="3" y1="8" x2="13" y2="8" />
+          </svg>
+        </div>
+        <span
+          className="light:text-black flex-1 text-[8.5px] font-black uppercase tracking-wider text-white"
+          style={{ letterSpacing: "0.08em" }}
+        >
+          New to Redprint
+        </span>
+        <span className="light:text-black/40 text-[10px] leading-none text-white/40">
+          ›
+        </span>
+      </div>
+
+      {/* Bottom row: avatar + username + action icons */}
+      <div
+        className="flex items-center gap-1.5 px-2 py-1.5"
+        style={{ backgroundColor: footerBg }}
+      >
+        <div
+          className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
+          style={{ backgroundColor: org.primaryColor }}
+        >
+          <div className="h-1.5 w-1.5 rounded-full bg-white/80" />
+        </div>
+        <span className="light:text-black/85 text-[8.5px] text-white/85">
+          {username}
+        </span>
+        <span className="light:text-black/55 ml-auto flex items-center gap-2 text-white/55">
+          <Heart />
+          <Bubble />
+          <Ellipsis />
+        </span>
+      </div>
     </div>
   );
 }
