@@ -1,388 +1,675 @@
-# Redprint Marketing Site — Scroll Sequence Plan
+# Redprint Marketing Site — Plan & State
 
-Last updated: 2026-05-29 (added Step 2 tracking cards + connector lines, dot-2 activation, phone shows HomeWorkoutView with floating/cursor parallax, viewport-resize fixes)
+Last updated: 2026-06-05 (Steps 3 / 4 / 5 / 6 / testimonials / request-gym-form / silhouettes all built; mobile responsive page; modals + Resend email; legal pages; favicon + system-theme default; Vercel deployed at tapredprint.com)
 
-This document is the single source of truth for the scroll-driven landing-page sequence. Read this first to pick up where the last session left off.
+This document is the single source of truth for the Redprint marketing site — both the scroll-driven landing page and the surrounding surface (mobile page, modals, legal pages, deployment). Read this first to pick up where the last session left off.
 
 ---
 
 ## 1. TL;DR
 
-The Redprint marketing site is a single Next.js page with one giant scroll-driven sequence. The user scrolls through `TOTAL_VH = 5525` vh of fake page height (so `≈ 5425` vh of actual scroll, since the sticky frame is 100vh). All animations are driven by `useScroll().scrollYProgress` and per-phase `useTransform()` MotionValues. There are **no time-based animations** in the sequence — everything is scroll-tied so the user can scrub forward and back.
+The marketing site is a Next.js 16 App Router project. The home page is a giant scroll-driven sequence below the `md` breakpoint cutoff, and a vertically-scrolling stacked page on phones.
 
-What ships today:
-- Hero opening (rotating wheel, panel takeover, "Fitness AI…" headline)
-- Pillars stage (three boxes morphed from the wheel)
-- "How it works" left-side menu forms by flying 6 dots from the wheel to a column at top-left
-- Dots 1–5 collapse to a bottom stack while dot 0 stays at the top
-- Step 1 ("INTERACT WITH REDPRINT TAGS"): 7 tags scale in, description types in, surround tags slide behind centre tag, lat-pulldown equipment image fades in + zooms to 16×, phone slides up + taps, beacon ripples
-- Step 1 → Step 2 transition: text un-types (25vh), equipment + centre tag fade out, dot 1 ramps from 50% → 100% and slides up under dot 0, phone repositions to (40% vw, vertically centred) and shrinks 10%
-- Phone is now a real `<PhoneFrame><HomeWorkoutView /></PhoneFrame>` instance (Marist org), fixed 280px wide, with ambient sine float + cursor parallax + small Z-tilt all gated by `transitionP`. The HomeWorkoutView screen content is wrapped in a `motion.div` with `opacity: transitionP` so the screen stays "off" during the tap (only the PhoneFrame's bg + status bar + dynamic island show) and lights up as the phone moves to its centred position
-- **Step 2 ("TAP-TO-TRACK")**: three `<InfoCard>`s (01 SPEED, 02 MEMORY, 03 DEPTH) stacked on the right. Each card has its own 0→1 sub-phase: dashed line draws from a phone UI anchor (`data-tracking-anchor` element) to the card's left edge, then the card flickers in (same `flicker` curve as left-menu labels). Phone-end of each line is re-measured every frame via `getBoundingClientRect()`, so it tracks the phone through cursor parallax / float / scroll. Dot 2 activates on the first card sub-phase (`step3TransitionP = card1P`).
+**Current desktop scroll sequence (Steps 1–6 all built):**
 
-What does NOT ship yet:
-- The remaining steps (ON-DEMAND LEARNING, GYM-SPECIFIC AI, COMPETE/COMMUNITY, VISUALIZE PROGRESS) need both content and inter-step transitions.
+1. Hero opening (rotating wheel, panel takeover, "Fitness AI…" headline)
+2. Pillars stage (three boxes morphed from the wheel)
+3. Six dots fly to a top-left column ("How it works" menu); dots 1–5 collapse to a bottom stack
+4. **Step 1 — INTERACT WITH REDPRINT TAGS** (tags scale in, description types, lat-pulldown silhouette zooms 1×→16×, phone slides up + taps, beacon ripples)
+5. **Step 2 — TAP-TO-TRACK** (phone repositions to (40%, 50%), shows HomeWorkoutView with float + parallax; three SPEED / MEMORY / DEPTH tracking cards reveal on the right with dashed connector lines drawn from phone UI anchors)
+6. **Step 3 — ON-DEMAND LEARNING** (phone shows ExerciseRedprintView, three learning cards on the right)
+7. **Step 4 — GYM-SPECIFIC AI** (equipment cluster appears, then phone shows AIChatbotView)
+8. **Step 5 — COMPETE/COMMUNITY** (phone cycles through CommunityView → GroupChallengeDetailView → TierAchievementCongratulationsView with three captions: Monthly gym leaderboard / Form groups with friends / Earn rewards from your gym)
+9. **Step 6 — VISUALIZE PROGRESS** (phone fans into multiple workout-history phones; final WorkoutHistoryAnalysisView)
+10. **Testimonials layer** (testimonials hidden inside a dot-matrix sentence that resolves into individual quote cards)
+11. **Request-your-gym form** (full RequestGymForm rendered at the end with a 3-silhouette bouncy bottom)
+12. **Footer auto-play** (formation animation runs once it starts — NOT scroll-tied — six dots converge into "Fitness AI that knows your gym")
+13. **SiteFooter** below the section (Product / Company / Connect link columns + QR/store-pill column)
+
+**Mobile (< md / 768px)** swaps to `<MobileHome />` — a stacked Hero / How it works / Pillars / Testimonials / FinalCTA scroll, no scroll-tied animations. Server-side UA detection picks the right tree at SSR so neither viewport sees a flash of the wrong layout.
+
+**Live deployments:**
+- Production: `https://tapredprint.com` (Vercel, auto-deploys from `main`)
+- Preview: `redprint-web.vercel.app`
+- `redprintfit.com` is still on Wix; not migrated (see §15)
 
 ---
 
 ## 2. Tech stack
 
-- **Next.js 15** App Router, React 19
+- **Next.js 16** App Router, React 19, Turbopack dev
 - **Tailwind v4** with custom `@custom-variant light` (theme switched by `data-theme` attribute on `<html>`)
 - **Framer Motion 12** — `useScroll`, `useTransform`, `useSpring`, `useMotionValue`, `useTime`, `motion.div`
-- **Lenis** smooth scroll wired through `LenisProvider` (with a `ResizeObserver` on `document.body` to call `lenis.resize()` whenever page height changes — this fixed a stale `maxScroll` cache that was breaking the end of the section)
-- **GSAP** ticker just for advancing Lenis frames
-- Fonts: Outfit (display) and Inter (body), loaded via `next/font`
+- **GSAP** — Hero entrance + Lenis ticker
+- **Lenis** smooth scroll via `LenisProvider` (with a `ResizeObserver` on `document.body` to call `lenis.resize()` whenever page height changes — fixes stale `maxScroll` cache). Also handles popstate-reload (force reload on back-nav so stale scroll state doesn't render a broken page)
+- **Resend** for transactional email (Contact form, Request-Gym form)
+- Fonts: Outfit (display), Inter (body), Bitcount Grid Single (pixel font used by the testimonial dot-matrix). All loaded via `next/font`
 
-Dev: `pnpm dev` (server at http://localhost:3000)
+Dev: `pnpm dev` (server at `http://localhost:3000`)
 Type-check / build: `pnpm build`
 
 ---
 
-## 3. File map
+## 3. Project surface (all routes)
 
-Anything under `components/` is what touches the scroll sequence.
-
-| File | Purpose |
-|---|---|
-| `app/page.tsx` | Renders `<ScrollSequence />` only |
-| `components/sections/ScrollSequence.tsx` | **The orchestrator.** Owns `scrollYProgress`, every phase constant, every MotionValue, and every render. ~990 lines |
-| `components/sections/Hero.tsx` | Initial logo + headline scene |
-| `components/LoadingRing.tsx` | The 6-dot wheel — spin, 6→3 merge, 3 boxes, reverse, line formation, collapse, post-collapse dot opacity |
-| `components/sections/Pillars.tsx` | The 3-pillar info cards rendered into the boxes |
-| `components/sections/HowItWorksSteps.tsx` | The left-side menu — labels, dashed connectors, vertical connectors, solid progress overlay |
-| `components/sections/RedprintTags.tsx` | The 7 Redprint hex tags (6 orgs + generic centre) |
-| `components/animations/TypewriterText.tsx` | Char-by-char reveal tied to a 0→1 progress MV (or a time-based start). Supports `reverse` prop |
-| `components/effects/Grain.tsx`, `Glow.tsx` | Visual textures |
-| `components/sections/TrackingCards.tsx` | The three Step-2 explanation cards on the right + the SVG dashed connector lines. Phone-end re-measured each rAF tick via `data-tracking-anchor` selectors |
-| `components/InfoCard.tsx` | The reusable row card (number + label header, dashed divider, headline, description). Used by TrackingCards |
-| `components/phone/PhoneFrame.tsx` | iPhone shell — renders status bar, dynamic island, screen. Scales children via single `transform: scale(width/260)` so HomeWorkoutView design-px values stay proportional |
-| `components/phone/screens/HomeWorkoutView.tsx` | The screen content shown inside the scroll sequence's phone. Has `data-tracking-anchor` markers on: set row 1 (`"set-row"`, the active TAP row), the "Last time" line (`"last-time"`), and the bottom toolbar (`"toolbar"`) |
-| `lib/useTheme.ts` | Reads `data-theme` attribute |
-
-Asset locations:
-- `public/tags/{gym-it, niagara, oswego, generic, swarthmore, waverley-oaks, ymca}.png` — the 7 tags
-- `public/exercises/lat_pulldown_elevation.png` — equipment silhouette (used as a CSS mask so it tints with currentColor)
-- `public/devices/phone_template.png` — phone line drawing (light-mode authored; inverted via `filter: invert(1)` in dark mode)
+| Route | Purpose | Component |
+|---|---|---|
+| `/` | Home — scroll sequence (desktop) or mobile home (phone). SSR picks via User-Agent | `app/page.tsx` → `HomePageSwitcher` → `ScrollSequence + SiteFooter` or `MobileHome` |
+| `/privacy` | Privacy Policy (full canonical text + GDPR + CCPA sections) | `app/privacy/page.tsx` → `LegalPage` |
+| `/terms` | Terms of Use (29 sections, canonical) | `app/terms/page.tsx` → `LegalPage` |
+| `/email-preview` | Dev-only preview of Resend email templates | `app/email-preview/page.tsx` |
+| `/for-gyms` | Stub | `app/for-gyms/page.tsx` |
+| `/api/contact` | POST endpoint that sends Contact form via Resend | `app/api/contact/route.ts` |
+| `/api/request-gym` | POST endpoint that sends Request-Gym form via Resend + auto-reply | `app/api/request-gym/route.ts` |
+| `/api/email-preview` | Returns rendered HTML for the various email templates (`?t=owner`, etc.) | `app/api/email-preview/route.ts` |
 
 ---
 
-## 4. Scroll architecture
+## 4. File map
 
-`useScroll({ target: sectionRef, offset: ["start start", "end end"] })` gives a raw `scrollYProgress` MotionValue (0→1). All step-1 phases are 0–1 fractions inside `step1Progress`, which is a remap:
+### Scroll-sequence components
+
+| File | Lines | Purpose |
+|---|---|---|
+| `components/sections/ScrollSequence.tsx` | 3004 | **The orchestrator.** Owns `scrollYProgress`, every phase constant, every MotionValue, and every render |
+| `components/sections/Hero.tsx` | 368 | Initial logo + headline scene; GSAP opening; phone fan with click-to-promote; Contact us + Request your gym CTAs |
+| `components/LoadingRing.tsx` | — | The 6-dot wheel — spin, 6→3 merge, 3 boxes, reverse, line formation, collapse, post-collapse dot opacity |
+| `components/sections/Pillars.tsx` | 527 | The 3-pillar info cards rendered into the boxes. Now includes per-pillar highlights (day-swap, play-button press, leaderboard swap) |
+| `components/sections/HowItWorksSteps.tsx` | 521 | Left-side menu — labels, dashed connectors, vertical connectors, solid progress overlay. Steps 1–6 with per-dot activation `step{N}TransitionP` props |
+| `components/sections/RedprintTags.tsx` | 415 | The 7 Redprint hex tags (6 orgs + generic centre) |
+| `components/sections/TrackingCards.tsx` | 360 | Step-2 SPEED / MEMORY / DEPTH cards on the right + SVG dashed connectors. Phone-side endpoint re-measured each rAF via `data-tracking-anchor` selectors |
+| `components/sections/EquipmentCluster.tsx` | 386 | Step-4 GYM-SPECIFIC AI equipment cluster (the cluster of equipment images that gathers, gets queried by the chatbot) |
+| `components/sections/TestimonialsLayer.tsx` | 1028 | Testimonials section: testimonials hidden in a Bitcount-Grid dot field, dots route to per-letter targets, then collapse to individual quote cards. **Exports `TESTIMONIALS` array** consumed by `MobileHome` |
+| `components/sections/RequestGymForm.tsx` | 121 | End-of-page Request-Your-Gym form (wraps `RequestGymModal`'s form fields into a full-section layout) |
+| `components/sections/BottomSilhouettes.tsx` | 221 | Three fitness silhouettes that bounce up from below with overshoot at the very end of the section |
+| `components/sections/OrgCarousel.tsx` | 152 | Horizontal "wheel picker" of org logos. Now `<motion.button type="button">` (was `<motion.div onClick>` — type=button kills Chrome's email-autofill misfire) |
+| `components/animations/TypewriterText.tsx` | — | Char-by-char reveal tied to a 0→1 progress MV (or a time-based start). Supports `reverse` prop (unused) |
+| `components/effects/Grain.tsx`, `Glow.tsx` | — | Visual textures |
+| `components/InfoCard.tsx` | — | Reusable row card (number + label header, dashed divider, headline, description). Used by TrackingCards and elsewhere |
+
+### Phone shell + screens (rendered inside `<PhoneFrame>` throughout)
+
+| File | Purpose |
+|---|---|
+| `components/phone/PhoneFrame.tsx` | iPhone shell — status bar, dynamic island, screen. Scales children via `transform: scale(width/260)` so design-px values stay proportional |
+| `components/phone/screens/HomeWorkoutView.tsx` | Active workout screen (Step 2). Has `data-tracking-anchor` markers on set-row, last-time, and toolbar |
+| `components/phone/screens/ExerciseRedprintView.tsx` | Exercise detail with video + instructions (Step 3) |
+| `components/phone/screens/AIChatbotView.tsx` | AI chatbot conversation (Step 4) |
+| `components/phone/screens/CommunityView.tsx` | Gym leaderboard + activity feed (Step 5a) |
+| `components/phone/screens/GroupChallengeDetailView.tsx` | Group challenge (Step 5b) |
+| `components/phone/screens/TierAchievementCongratulationsView.tsx` | Tier reward unlock (Step 5c) |
+| `components/phone/screens/WorkoutHistoryAnalysisView.tsx` | History analytics view (Step 6) |
+| `components/phone/screens/ExerciseHistoryAnalysisView.tsx` | Older exercise-specific history view |
+| `components/phone/screens/FinishedWorkoutSummaryView.tsx` | Finished workout summary modal |
+
+### Mobile responsive
+
+| File | Purpose |
+|---|---|
+| `components/HomePageSwitcher.tsx` | Picks `<ScrollSequence + SiteFooter>` or `<MobileHome>` based on `initialView` prop. `useState(initialView)` is hydrated by SSR; client `matchMedia` listener still runs to handle window-resize edge cases |
+| `components/mobile/MobileHome.tsx` (492 lines) | All mobile sections inline: `MobileHero`, `MobileHowItWorks` (6 stacked steps with phone screenshots), `MobilePillars`, `MobileTestimonials`, `MobileFinalCTA`. Mounts the three modals (Request/Contact/Download) |
+| `components/MobileMenuDrawer.tsx` | Full-screen overlay opened by the mobile-nav hamburger; surfaces How it works / Testimonials / Contact / Download / Sign in |
+
+### Modals (mounted from Nav, Hero, SiteFooter, and MobileHome — anywhere CTAs live)
+
+| File | Purpose |
+|---|---|
+| `components/RequestGymModal.tsx` | "Bring Redprint to your gym" form. Member/Owner toggle ("I represent a gym" — was "I'm a gym owner"). Honeypot. Posts to `/api/request-gym` |
+| `components/ContactModal.tsx` | Generic Contact form. Posts to `/api/contact` |
+| `components/DownloadModal.tsx` | App Store / Google Play QR codes + clickable store pills. Real URLs live in `lib/constants.ts` |
+
+### Legal
+
+| File | Purpose |
+|---|---|
+| `components/legal/LegalPage.tsx` (51 lines) | Shared layout for `/privacy` and `/terms` — centered narrow column, title + "Last updated" header, prose styling via descendant arbitrary variants, `SiteFooter` below |
+| `app/privacy/page.tsx` | Full Privacy Policy text (canonical from old redprintfit.com/privacy) with fixes: full Buffalo address, "United States" instead of "New York, United States", `info@redprintfit.com`. Adds GDPR + CCPA sections that were missing |
+| `app/terms/page.tsx` | Full Terms of Use (29 sections, canonical from old redprintfit.com/termsofuse) with fixes: email → info@, formatted phone, `/privacy` relative link in §15, "one (1) year" grammar fix, NY venue phrasing |
+
+### Email + API
+
+| File | Purpose |
+|---|---|
+| `app/api/contact/route.ts` (104 lines) | Validates Contact form, sends notification to `REQUEST_GYM_CONTACT_EMAIL` with `Reply-To: submitter`. No auto-reply |
+| `app/api/request-gym/route.ts` (156 lines) | Validates Request-Gym form. Sends founder notification (`REQUEST_GYM_FOUNDER_EMAIL`) and an auto-reply to the submitter. Branches member vs owner templates. Honeypot drops bot submissions silently. Optional Slack webhook |
+| `app/api/email-preview/route.ts` (67 lines) | Returns rendered HTML for any template via `?t=member|owner|founder|contact|contact-owner` query — used by `/email-preview` dev page |
+| `lib/email/templates.ts` (249 lines) | `founderNotifyTemplate`, `memberAutoReplyTemplate`, `ownerAutoReplyTemplate`, `contactNotifyTemplate`. Helper `storeButton` for Apple / Google Play pills. Logo set to 160×32 (matches natural 5.04:1 aspect — earlier 140×32 was squishing it) |
+
+### Layout / chrome
+
+| File | Purpose |
+|---|---|
+| `app/layout.tsx` | Root layout. Mounts `<LenisProvider>` + `<Nav>` + `<main>{children}</main>`. Sets `data-theme` via pre-paint inline script; defaults to OS `prefers-color-scheme` if no localStorage override. Wires the favicon `<link>` tags with `media` queries — `/favicon-light.svg` for light, `/favicon-dark.svg` for dark |
+| `app/page.tsx` | Reads `User-Agent` server-side via `next/headers`; passes `initialView="mobile"` or `"desktop"` to `HomePageSwitcher` — eliminates first-paint flash of the wrong layout |
+| `components/layout/Nav.tsx` | Fixed-top nav. Desktop: How it works / Testimonials / Download / Sign in / ThemeToggle. Mobile (< md): Download pill + hamburger. Hosts `<DownloadModal>`, `<ContactModal>`, `<MobileMenuDrawer>` |
+| `components/layout/SiteFooter.tsx` | Footer with Product / Company / Connect columns + QR/store-pill column. "How it works" / "Testimonials" use path-aware smart-scroll (same pattern as Nav). Contact opens `ContactModal`. Privacy Policy → `/privacy`, Terms of Service → `/terms`. Real social URLs (Instagram tapredprint, TikTok redprintfit, LinkedIn company/redprint-inc). Store pills link to the real App Store / Play Store |
+| `components/layout/ThemeToggle.tsx` | Two-state moon/sun toggle. Writes `localStorage.theme` on click — this is the signal that user has manually overridden the OS preference |
+| `components/animations/LenisProvider.tsx` | Provides Lenis context, `ResizeObserver` on body, and `popstate` listener that force-reloads on back-nav |
+| `components/HashScrollTarget.tsx` | On home page mount, reads `location.hash` and scrolls to `#hiw` / `#testimonials` via `scrollToVh` |
+| `lib/scrollTargets.ts` | `SCROLL_TARGETS.howItWorks = 1360`, `SCROLL_TARGETS.testimonials = 4500` — absolute vh targets used by Nav and SiteFooter |
+| `lib/lenis.ts` | `scrollToVh`, `scrollToTop` helpers |
+| `lib/constants.ts` | `APP_STORE_URL = https://apps.apple.com/.../id1539200045`, `PLAY_STORE_URL = .../com.redprint.fitness`, `WEB_APP_URL = https://app.redprintfit.com` |
+| `lib/content/orgs.ts` | The 6 orgs (Marist, Niagara, Oswego, Swarthmore, Waverley Oaks, YMCA) + Generic. Each has `id`, `name`, `primaryColor`, `logoSrc`, glow color |
+| `lib/blobAvatar.ts` | Procedural blob avatars for testimonials |
+
+### Public assets (highlights)
+
+- `public/favicon-light.svg`, `public/favicon-dark.svg` — circular SVG favicons wrapping the source PNG with a `clipPath`. Picked via `prefers-color-scheme` media query
+- `public/tags/{...}.png` — the 7 Redprint hex tags
+- `public/exercises/lat_pulldown_elevation.png` — equipment silhouette (CSS-masked so tints with currentColor)
+- `public/devices/phone_template.png` — phone line drawing (light-mode authored; inverted via `filter: invert(1)` in dark mode)
+- `public/qr/redprint_app_store_qr.png`, `public/qr/redprint_play_store_qr.png` — QR codes for the store pills
+- `public/silhouettes/fitness_silhouette_{1,2,3}.png` — bottom-bouncing silhouettes
+- `public/screens/exercise-pushup.jpg`, `public/screens/exercise-situp.jpg` — exercise demo stills
+- `public/logos/gym_logos/` — gym partner logos for the OrgCarousel
+- `public/grain/`, `public/icons/trophy.png`, `public/tags/`, `public/avatars/` — supporting assets
+
+---
+
+## 5. Scroll architecture
+
+`useScroll({ target: sectionRef, offset: ["start start", "end end"] })` gives a raw `scrollYProgress` (0→1). All Step-1 phases are 0–1 fractions inside `step1Progress`, which is a remap:
 
 ```ts
 const step1Progress = useTransform(scrollYProgress, [0, STEP1_LIMIT], [0, 1]);
 ```
 
-This remap exists so the ~20 step-1 phase constants didn't have to be rescaled every time we added scroll at the end. To add a *new* phase after step 1:
-1. Reduce `STEP1_LIMIT` and/or increase `TOTAL_VH` so the absolute vh for step-1 stays the same
-2. Define the new phase on RAW `scrollYProgress` using values in `[STEP1_LIMIT, 1.0]`
-3. Existing step-1 transforms keep working unchanged
+The remap exists so the ~20 step-1 phase constants didn't need rescaling each time we added scroll at the end. Steps 2–6 + transitions + cards + testimonials + request-gym-form all run on **raw `scrollYProgress`** past `STEP1_LIMIT`.
 
-The tap phase + the step-2 transition both run on raw `scrollYProgress`.
+Adding a new phase after Step N:
+1. Reduce `STEP1_LIMIT` and/or increase `TOTAL_VH` so the absolute vh for already-built phases stays the same
+2. Define the new phase on RAW `scrollYProgress` using values in `[STEP{N}_END, 1.0]`
+3. Existing transforms keep working unchanged
 
 ---
 
-## 5. Timeline (all phases with absolute vh)
+## 6. Timeline (all phases with absolute vh)
 
-Scrollable vh = `TOTAL_VH − 100 = 4725`. Absolute vh below = raw `scrollYProgress × 4725`.
+`TOTAL_VH = 5269` (was 5525 — trimmed across many vh-reduction passes). Scrollable = `TOTAL_VH - 100 = 5169`. Absolute vh below = raw `scrollYProgress × 5169`.
 
-### Step 1 sub-timeline (operates on `step1Progress` 0→1, which spans 0 → 4200 vh of raw scroll)
+`STEP1_LIMIT = 0.3316` (was 0.875 — dramatically smaller because Steps 2–6 + extras dominate the timeline).
 
-| Phase | Range (step1Progress) | What happens |
-|---|---|---|
-| Rest | 0 → 0.204 (REST_END) | Hero static; logo spins one full turn |
-| Panel grow | 0.204 → 0.446 (PANEL_END) | Bottom panel rises from tab → full vh; crossfade window inside |
-| Pre-move dwell | 0.446 → 0.390 | (negative — MOVE_START=0.390 sits inside the panel range; intentional overlap) |
-| Wheel move to centre | 0.390 → 0.520 (MOVE_END) | Wheel slides from logo slot to viewport centre |
-| Centre idle | 0.520 → 0.567 (MERGE_END) | Wheel keeps spinning |
-| 6 → 3 merge | up to MERGE_END | Dot pairs converge |
-| 3 → boxes | MERGE_END → 0.687 (BOX_END) | Three pillar boxes form |
-| Pillars stage | BOX_END → 0.725 (PILLARS_END) | Pillars content reveals |
-| Pillars dwell | PILLARS_END → 0.799 (DWELL_END) | Hold on cards |
-| Pillars fade-out | DWELL_END → 0.808 (PILLARS_FADE_OUT_END) | |
-| Boxes → 3 dots (reverse) | 0.808 → 0.836 (REVERSE_BOX_END) | |
-| 3 → 6 dots (reverse) | 0.836 → 0.864 (REVERSE_MERGE_END) | |
-| Rotation re-ramp | 0.817 (ROTATION_RAMP_START) → 0.892 (LINE_END) | Extra 2 turns ease in over the line phase |
-| Line formation | LINE_START (=REVERSE_MERGE_END) → LINE_END | 6 dots fly from wheel to top-left column. Stagger inside `LoadingRing` |
-| Collapse | LINE_END → 0.929 (COLLAPSE_END) | Dots 1–5 slide down to a stack at the bottom; dot 0 stays. Labels/dashes fade to 25% / 40% |
-| Step-1 breathe | COLLAPSE_END → 0.953 (STEP1_BREATHE_END) | Hold; tags + description visible |
-| Tag-description un-type | STEP1_BREATHE_END → 0.965 (STEP1_TEXT_FADE_END) | "Interactive Redprint tags…" un-types reverse-direction |
-| Surround tags collapse | STEP1_BREATHE_END → 0.977 (STEP1_FADE_OUT_END) | The 6 surround tags slide behind the centre tag and fade |
-| Lat-pulldown fade-in | STEP1_BREATHE_END → STEP1_END (1.0) | Equipment silhouette fades in (via CSS mask) |
+### Step 1 sub-timeline (operates on `step1Progress` 0→1, which spans 0 → ~1714 vh of raw scroll)
 
-### Tap + transition + tracking cards timeline (operates on RAW `scrollYProgress`)
+Same internal phases as before: rest → panel grow → wheel move → 6→3 merge → 3→boxes → pillars stage → reverse → line formation → collapse → step-1 breathe → tag-description un-type → surround-tags collapse → lat-pulldown fade-in. See git history of `ScrollSequence.tsx` for the full list of step-1 phase constants — they're stable from before 2026-05-29.
 
-After the recent total-vh extension for the tracking cards: `TOTAL_VH = 5525`, scrollable = 5425 vh. Step-1 phases still resolve to the same ABSOLUTE vh via the `step1Progress` remap; the raw-scroll constants below were rescaled.
+### Raw-scroll timeline (Steps 2–6 + testimonials + request-form)
 
-| Phase | Raw range | Absolute vh | What happens |
+All values below are raw `scrollYProgress`.
+
+| Phase | Range | Absolute vh | What happens |
 |---|---|---|---|
-| Tap rise + type | 0.7742 (TAP_START = STEP1_LIMIT) → 0.8018 (TAP_RISE_END) | 4200 → 4350 (150 vh) | Phone slides up from below + "Tap your phone…" types in. Equipment dims 100% → 25%. Lat-pulldown scales 1× → 16×, centre tag slides 73.8% → equipment centre |
-| Tap impact | 0.8018 → 0.8111 (TAP_END) | 4350 → 4400 (50 vh) | Phone scales 1 → 0.93 (top-centre origin). Two-ring beacon ripples out |
-| Tap breathe | 0.8111 → 0.8295 (STEP2_TRANSITION_START) | 4400 → 4500 (100 vh) | Nothing animates. Progress line continues filling |
-| Text fade-out | STEP2_TRANSITION_START → +0.00461 | 4500 → 4525 (25 vh) | Tap text un-types fast via `tapTextFadeP`. `tapTextDisplayP = tapTypeP × (1 - tapTextFadeP)` |
-| Step 2 transition (phone move) | 0.8295 → 0.8710 (STEP2_TRANSITION_END) | 4500 → 4725 (225 vh) | Dot 1 opacity 0.5 → 1.0, dot 1 slides up to its lineY slot. Equipment + centre tag fade out. Phone repositions to (40%, 50%) at final scale 0.837. Phone shows `<HomeWorkoutView />`; floating + cursor parallax fade in (gated by `step2TransitionP`) |
-| **Card 1 (SPEED)** | 0.8710 (CARDS_START) → 0.9079 | 4725 → 4925 (200 vh) | Dashed line draws from active set row (TAP pill) on phone → card 1's left edge. After 60% of phase, card 1 flickers in. (Dot 1 / TAP-TO-TRACK was already activated during the step 1→2 transition; dot 2 stays at its un-reached floor.) |
-| **Card 2 (MEMORY)** | 0.9079 → 0.9447 | 4925 → 5125 (200 vh) | Line from "Last time: 135 lb × 8" line on phone → card 2's left edge. Card 2 flickers in after line completes |
-| **Card 3 (DEPTH)** | 0.9447 → 0.9816 (CARDS_END) | 5125 → 5325 (200 vh) | Line from bottom toolbar (SUPERSET, DROPSET, 1RM, NOTE, LIBRARY) on phone → card 3's left edge. Card 3 flickers in after line completes |
-| Post breathe | 0.9816 → 1.0 | 5325 → 5425 (100 vh) | Nothing — buffer to let the user settle on the fully-revealed Step 2 state before whatever comes next |
+| Tap rise + type | `TAP_START` (= `STEP1_LIMIT` = 0.3316) → `TAP_RISE_END` 0.3525 | 1714 → 1822 | Phone rises, "Tap your phone…" types in |
+| Tap impact | 0.3525 → `TAP_END` 0.3595 | 1822 → 1859 | Phone scales 1 → 0.93; beacon ripples |
+| Tap breathe | 0.3595 → `STEP2_TRANSITION_START` 0.3732 | 1859 → 1930 | Hold |
+| Step 1 → 2 transition | 0.3732 → `STEP2_TRANSITION_END` 0.3927 | 1930 → 2031 | Dot 1 ramps to 100%, equipment fades, phone repositions to (40%, 50%) and shrinks 10%, shows HomeWorkoutView |
+| **Step 2 cards** (SPEED → MEMORY → DEPTH) | `CARDS_START` 0.3927 → `CARDS_END` 0.4301 | 2031 → 2224 | Three dashed connector lines + flicker reveals |
+| Step 2 → 3 transition | 0.4301 → `STEP3_TRANSITION_END` 0.4771 | 2224 → 2467 | Dot 2 activates; phone screen swaps to ExerciseRedprintView |
+| **Step 3 cards** (LEARN) | `LEARN_START` 0.4771 → `LEARN_END` 0.5152 | 2467 → 2664 | Three learning cards reveal on the right (stagger via `LEARN_WINDOW` / `LEARN_STAGGER`) |
+| Step 3 → 4 transition | 0.5293 → `STEP4_TRANSITION_END` 0.5487 | 2735 → 2836 | Dot 3 activates |
+| **Step 4 — Equipment cluster** | `EQUIP_START` 0.5487 → `EQUIP_END` 0.5765 | 2836 → 2979 | `<EquipmentCluster>` gathers; phone shows AIChatbotView |
+| **Step 4 — Chat** | `CHAT_START` 0.5765 → `CHAT_END` 0.5938 | 2979 → 3069 | Chatbot conversation animates |
+| Step 4 → 5 transition | `STEP5_TRANSITION_START` 0.6076 → `STEP5_TRANSITION_END` 0.6270 | 3140 → 3240 | Dot 4 activates |
+| **Step 5 — Compete title** | 0.6270 → `COMPETE_TITLE_END` 0.6543 | 3240 → 3381 | "Your gym vs. the world" + caption swaps as the screen cycles `CommunityView → GroupChallengeDetailView → TierAchievementCongratulationsView` |
+| Step 5 → 6 transition | `STEP6_TRANSITION_START` 0.6820 → `STEP6_TRANSITION_END` 0.7013 | 3525 → 3625 | Dot 5 activates |
+| **Step 6 — Phone fan** | 0.7013 → `FAN_END` 0.7290 | 3625 → 3768 | Phone fans into multiple phone instances showing WorkoutHistoryAnalysisView variations |
+| **Step 6 — Progress visualization** | 0.7290 → `PROGRESS_END` 0.7483 | 3768 → 3868 | Charts/data reveal |
+| Step 6 exit | 0.7483 → `EXIT_END` 0.8114 | 3868 → 4194 | Phones exit, dots / menu fade |
+| **Testimonials** | 0.8114 → `TEST_CARDS_END` 0.8653 | 4194 → 4473 | `TestimonialsLayer`: wheel extra spin → dot field spread → dot-matrix line-drawing of testimonial sentence → individual quote cards |
+| **Request-Your-Gym form** | 0.8653 → ~ 0.95 | 4473 → ~4910 | `<RequestGymForm>` rendered. `<BottomSilhouettes>` bouncy entrance |
+| **Footer auto-play** | once the latch trips at ~0.95+ | — | 6 dots converge into "Fitness AI that knows your gym" sentence. **Time-based, NOT scroll-tied** (uses `useTime` past the latch). Wheel keeps spinning post-latch |
 
-`step1ProgressP` (the SOLID overlay inside the 0→1 vertical connector in the left menu) reads raw `scrollYProgress` from `COLLAPSE_END × STEP1_LIMIT` all the way to `STEP2_TRANSITION_START`. So the bar physically reaches dot 1 right when step 2 begins.
+### Path-aware nav anchors (`lib/scrollTargets.ts`)
+
+- `SCROLL_TARGETS.howItWorks = 1360 vh` (lands user roughly at moment 13 — top-left menu fully formed)
+- `SCROLL_TARGETS.testimonials = 4500 vh` (lands inside the testimonials phase)
+- Nav + SiteFooter use these via `scrollToVh()`. On mobile, they first try `document.getElementById("mobile-hiw" / "mobile-testimonials")` and fall back to the vh target
 
 ---
 
-## 6. MotionValues registry
+## 7. MotionValues registry (current — additions since 2026-05-29 in **bold**)
 
-All inside `ScrollSequence.tsx`. Listed in render order. `step1Progress` is the remap; everything else either reads it or reads raw `scrollYProgress`.
+Listed in render order in `ScrollSequence.tsx`.
 
 | Name | Source | Range | Drives |
 |---|---|---|---|
-| `step1Progress` | raw | `[0, STEP1_LIMIT] → [0, 1]` | All step-1 transforms (clamps at 1 past `STEP1_LIMIT`) |
-| `ringRotRad` | step1 | 0 → many turns | Wheel rotation |
-| `logoRotation` | step1 | 0 → 360 × TOTAL_TURNS deg | Hero logo spin |
-| `mergeP` | step1 | 0 → 1 over [MOVE_END, MERGE_END] | 6 → 3 merge |
-| `boxP` | step1 | 0 → 1 over [MERGE_END, BOX_END] | 3 → box morph |
-| `pillarsP` | step1 | 0 → 1 over [BOX_END, PILLARS_END] | Pillars reveal |
-| `indicatorOpacity`, `indicatorFillPct` | step1 | over [PILLARS_END, DWELL_END] | Scroll cue |
-| `lineP` | step1 | 0 → 1 over [LINE_START, LINE_END] | Line formation in `LoadingRing` |
-| `howItWorksTypeP` | step1 | 0 → 1 around LINE phase | Top-left "HOW IT WORKS:" header typewriter |
-| `collapseP` | step1 | 0 → 1 over [COLLAPSE_START, COLLAPSE_END] | Tags scale-in + dots collapse |
-| `tagTextTypeP` | step1 | Combined type-in + hold + un-type | "Interactive Redprint tags…" typewriter |
-| `step1ProgressP` | **raw** | 0 → 1 over [COLLAPSE_END×STEP1_LIMIT, 1.0] | Solid overlay in 0→1 vertical connector |
-| `step1FadeOutP` | step1 | 0 → 1 over [STEP1_BREATHE_END, STEP1_FADE_OUT_END] | 6 surround tags slide behind centre + fade |
-| `latPullP` | step1 | 0 → 1 over [STEP1_BREATHE_END, STEP1_END] | Equipment fade-in |
-| `placeP` | step1 | 0 → 1 over [STEP1_FADE_OUT_END, STEP1_END] | Equipment 1×→16× zoom + centre tag slide to equipment centre |
-| `tapTypeP` | raw | 0 → 1 over [TAP_START, TAP_RISE_END] | "Tap your phone…" typewriter type-in (held at 1) |
-| `phoneRiseP` | raw | 0 → 1 over [TAP_START, TAP_RISE_END] | Phone slides up from below |
-| `phoneTapP` | raw | 0 → 1 over [TAP_RISE_END, TAP_END] | Phone tap impact + beacon |
-| `step2TransitionP` | raw | 0 → 1 over [STEP2_TRANSITION_START, 1.0] | Dot 1 activation/move, equipment fade-out, centre tag fade-out, phone reposition |
-| `tapTextFadeP` | raw | 0 → 1 over [STEP2_TRANSITION_START, +0.00529] | Fast 25vh window that un-types the tap text |
-| `tapTextDisplayP` | combined | `tapTypeP × (1 - tapTextFadeP)` | Actual progress fed to the tap text typewriter |
-| `stepsRevealP` | step1 | 0 → 1 over [LINE_START, LINE_END] | `HowItWorksSteps`' per-dot dashed-line + label reveal |
-| `card1P`, `card2P`, `card3P` | raw | 0 → 1 over each card's 200vh sub-phase inside [CARDS_START, CARDS_END] | TrackingCards line draw (first 60%) + card flicker reveal (last 40%) |
-
-Note: dot 2 (ON-DEMAND LEARNING) stays at its un-reached 50% floor through the entire cards phase — the cards are content for the already-active TAP-TO-TRACK step, not a transition into the next. `LoadingRing` and `HowItWorksSteps` still accept a `step3TransitionP` prop for future use, but ScrollSequence does not pass one.
-| `logoOpacity`, `avatarOpacity`, `avatarMoveP`, panel mvs | step1 | various | Hero crossfade + panel geometry |
+| `step1Progress` | raw | `[0, STEP1_LIMIT] → [0, 1]` | All step-1 transforms |
+| `ringRotRad`, `logoRotation`, `mergeP`, `boxP`, `pillarsP`, `lineP`, `howItWorksTypeP`, `collapseP`, `tagTextTypeP`, `step1ProgressP`, `step1FadeOutP`, `latPullP`, `placeP` | step1 / raw | various | Step-1 visuals (same as before 2026-05-29) |
+| `tapTypeP`, `phoneRiseP`, `phoneTapP`, `step2TransitionP`, `tapTextFadeP`, `tapTextDisplayP` | raw | various | Tap phase + Step 1→2 transition |
+| `card1P`, `card2P`, `card3P` | raw | each 0→1 over its sub-phase | TrackingCards line draw (first 60%) + flicker reveal (last 40%) |
+| **`step3TransitionP`** | raw | 0→1 over `[CARDS_END, STEP3_TRANSITION_END]` | Dot 2 activation + phone screen swap to ExerciseRedprintView |
+| **`learn1P / learn2P / learn3P`** | raw | each 0→1 over its sub-phase inside `[LEARN_START, LEARN_END]` | Step-3 learning cards stagger reveal |
+| **`step4TransitionP`** | raw | 0→1 over `[LEARN_END, STEP4_TRANSITION_END]` | Dot 3 activation |
+| **`equipP`** | raw | 0→1 over `[EQUIP_START, EQUIP_END]` | EquipmentCluster gather + AIChatbotView swap-in |
+| **`chatP`** | raw | 0→1 over `[CHAT_START, CHAT_END]` | Chatbot conversation animation |
+| **`step5TransitionP`** | raw | 0→1 over `[CHAT_END, STEP5_TRANSITION_END]` | Dot 4 activation |
+| **`competeP`** | raw | 0→1 over `[STEP5_TRANSITION_END, COMPETE_TITLE_END]` | "Your gym vs. the world" title + screen cycle through Community/GroupChallenge/TierAchievement |
+| **`step6TransitionP`** | raw | 0→1 over `[COMPETE_TITLE_END, STEP6_TRANSITION_END]` | Dot 5 activation |
+| **`fanP`** | raw | 0→1 over `[STEP6_TRANSITION_END, FAN_END]` | Phone fans into multiple history phones |
+| **`progressP`** | raw | 0→1 over `[FAN_END, PROGRESS_END]` | WorkoutHistory analytics reveal |
+| **`exitP`** | raw | 0→1 over `[PROGRESS_END, EXIT_END]` | Phones exit; left menu fades |
+| **`testWheelExtraP`, `testDotSpreadP`, `testLinesP`, `testCardsP`** | raw | over the testimonials phase | TestimonialsLayer choreography |
+| **`footerAutoP`** | **time-based** | latches to 0→1 over its own duration once scroll passes a threshold | Footer "Fitness AI that knows your gym" formation. After the latch trips, `footerSpinDriverP` (also time-based) keeps the wheel spinning |
+| **`formTextP`** | time-based, derived from `footerAutoP` | `(v - 0.80) / 0.18` | The sentence text-reveal portion of the footer formation |
 
 ---
 
-## 7. Components and props (current)
+## 8. Components & props (scroll sequence — incremental changes since 2026-05-29)
 
-### `<LoadingRing>` props
-- `size`, `ringRot`, `ringRadiusFrac`, `dotRadiusFrac`, `phase`, `centerOffsetXFrac`, `centerOffsetYFrac`
-- `mergeP`, `boxP`, `lineP`, `lineTargetLeftX`, `lineTargetTopY`, `collapseP`
-- **`step2TransitionP`** — when `cP > 0`, post-collapse opacity is: dot 0 = 1.0, linePos===1 = `0.5 + 0.5 × s2P`, linePos>2 = 0.5. Eased in via `cP` so there's no snap. Also: when `linePos===1 && s2P > 0`, the dot's collapsed Y target lerps back toward its `lineTargetY` (its original column slot)
-- **`step3TransitionP`** — identical wiring as `step2TransitionP` but for `linePos===2` (dot 2 / TAP-TO-TRACK). Used during the tracking cards phase
+### `<LoadingRing>`
+- Step-2 / step-3 `…TransitionP` props from before. Now also accepts: `step4TransitionP`, `step5TransitionP`, `step6TransitionP` (each ramps the corresponding dot's opacity 0.5 → 1.0 and lerps it back to its lineY slot)
+- Footer-form mode: `footerFormP` prop drives the 6-dot "Fitness AI that knows your gym" formation
+- `exitP` prop fades the whole ring during the Step-6 exit
 
-### `<HowItWorksSteps>` props
-- `progress` (= stepsRevealP), `collapseP`, `step1ProgressP`
-- **`step2TransitionP`** — same wiring. Modifies `dotY(1)` to lerp back to lineY and ramps dot 1's label opacity (`labelCollapseOpacity`) + dashed-line opacity (`dashCollapseOpacity`) from the collapsed floors (0.25 / 0.4) up to 1.0
-- **`step3TransitionP`** — identical, but for dot 2 (TAP-TO-TRACK). Drives `dotY(2)` lerp-back-to-lineY and ramps row 2's label + dashed-line opacities
-- **Labels** (current order, AFTER the reorder we did this session):
-  1. INTERACT WITH REDPRINT TAGS
-  2. TAP-TO-TRACK
-  3. ON-DEMAND LEARNING
-  4. GYM-SPECIFIC AI
-  5. COMPETE/COMMUNITY
-  6. VISUALIZE PROGRESS
+### `<HowItWorksSteps>`
+- Same per-dot `step{N}TransitionP` props
+- `exitP` fades labels + connectors at end of section
 
-### `<RedprintTags>` props
-- `progress` (= collapseP) — bouncy scale-in with per-tag stagger
-- `fadeOutP` — surround tags slide behind centre + fade
-- `placeP` + `placeTarget` — centre tag slides toward `placeTarget` (currently `{x: "73.8%", y: "51%"}`)
-- **`centreFadeOutP`** — added this session. When set, centre tag opacity multiplies by `(1 - centreFadeOutP)`
-- Internally uses `useTime` for ambient floating; mouse delta from window centre for cursor parallax with per-tag spring config variation
-- Generic centre tag has theme-aware glow: white halo in dark mode, black in light. PNG is inverted via `filter: invert(1)` in light mode (it's authored for dark)
+### `<Pillars>`
+- Added per-pillar highlight animations:
+  - **Tracking pillar**: day-swap (animated day-of-week indicator cycling)
+  - **AI pillar**: play-button press animation
+  - **Community pillar**: leaderboard row-swap
 
-### `<TypewriterText>` props
-- `text`, `start`, `speed`, `className`
-- `progress` — scroll-tied 0→1, `shown = round(text.length × p)`
-- **`reverse`** — added this session. When true, the visible chars are the SUFFIX (`text.slice(text.length - shown)`) and the hidden chars are the PREFIX (left-side layout reservation). NOTE: we built this but ended up not using it for the tap text — left-to-right typing with `text-align: right` gives the desired "growing from the trailing edge" feel. The `reverse` mode reveals chars in the WRONG semantic order (last char first), which the user didn't want
+### `<TrackingCards>` (Step 2)
+- Unchanged structurally — props are still `card1P / card2P / card3P`
+- Now uses `LEARN_WINDOW` / `LEARN_STAGGER` pattern that's been replicated for Step 3 (likely a sibling `LearnCards` component; check ScrollSequence.tsx for the actual JSX layout — it might be inline)
 
-### `<LatPullImage>` (helper inside `ScrollSequence.tsx`)
-- `progress` (= latPullP) — base opacity, also gates whether to render
-- `scaleP` (= placeP) — drives the 1× → 16× scale via `scale = 1 + 15 × v`
-- `dimP` (= tapTypeP) — dims to 25% during tap text type-in
-- **`fadeOutP`** (= step2TransitionP) — hard fade-out during step 2 transition
-- Final opacity: `progress × (1 - dimP × 0.75) × (1 - fadeOutP)`
-- Positioned `left:56% right:8% top:51% y:"-50%" height:50vh`. Rendered as a CSS-masked surface with `backgroundColor: currentColor`
+### `<EquipmentCluster>` (Step 4, new)
+- The "gym-specific AI" visualization. A cluster of equipment cards/icons gathers as the user scrolls. The phone next to it shows `AIChatbotView` querying the cluster
 
-### `<PhoneTap>` (helper inside `ScrollSequence.tsx`)
-- `riseP`, `tapP`, `transitionP`
-- `transformOrigin: "50% 0%"` (top centre — so tap impact compresses *into* the contact point)
-- Composite transform: `translateX(-50%) translateY(${riseVh}vh) translateY(${centreYPct}%) scale(${s})`
-  - `riseVh = 100 - 100 × riseP` (vh units)
-  - `s = (1 - 0.07 × tapP) × (1 - 0.1 × transitionP)` → 1 → 0.93 → 0.837
-  - **`centreYPct = -50 × transitionP × s`** ← critical: multiplied by `s` so the *visible* (scaled) phone's centre lands on viewport y=50%, not the unscaled-box's centre
-- `left` lerps `73.8% → 40%`, `top` lerps `51% → 50%` via separate motion values
-- `width: 280px` (fixed pixels — holds same general size as viewport resizes). Renders `<PhoneFrame width={280}><HomeWorkoutView org={PHONE_ORG} /></PhoneFrame>` — same UI as the Hero's active workout screen
-- **Floating + cursor parallax** (gated by `transitionP` so it only kicks in at the new step-2 position): inner `<motion.div style={{ x, y, rotate }}>` driven by `useTime` sine waves (`FLOAT_AMP = 8px`) + cursor-tracked spring translate (`PARALLAX = 14px`) + small Z-tilt (max ~4°). Gating is `... * g` where `g = transitionP.get()`, so during the rise/tap phases it's identically zero.
-- `PHONE_ORG = orgs[0]` (Marist) — static org choice for the scroll sequence; change here if a different org's colour palette is desired
+### `<TestimonialsLayer>` (new)
+- Dot-matrix text reveal: the Bitcount Grid Single font + Canvas character-to-coordinates trick. A field of small dots resolves into a testimonial sentence, then into per-quote cards
+- Exports `TESTIMONIALS` — consumed by `MobileHome` for the mobile testimonials section
 
-### `<TrackingCards>` (`components/sections/TrackingCards.tsx`)
-- Props: `card1P`, `card2P`, `card3P` (each 0→1 over its own 200vh sub-phase)
-- Renders three `<InfoCard>`s stacked on the right at fixed vh positions (`CARD_TOP_VH = [12, 42, 72]`), `right: 5vw`, `width: min(440px, 36vw)`
-- `LINE_END = 0.6` — first 60% of each sub-phase draws the connector line; remaining 40% runs the `flicker()` reveal on the card
-- `ConnectorLines` is a single SVG layer with `overflow: visible`. A `requestAnimationFrame` loop reads `[data-tracking-anchor="…"]` (phone side) and `[data-card-anchor="…"]` (card side) bounding rects each frame and sets state with the current endpoints. The line draws `from = phone-side rect's right-edge midpoint`, `to = card-side rect's left-edge midpoint`; the visible endpoint lerps along that segment per `drawP`
-- Target dot (phone side): 2px circle in `#7A7A80`, drawn as soon as line starts
-- Origin dot (card side): 3px circle in `#F5F1EA`, drawn once `drawP >= 1`
-- Stroke: 1px `#3A3A42`, `strokeDasharray="3 4"`, round endcaps
+### `<RequestGymForm>` (new)
+- End-of-page full-section form. Posts to `/api/request-gym`. Shares submission handler shape with `RequestGymModal`
 
-### `<InfoCard>` (`components/InfoCard.tsx`)
-- Props: `index`, `label`, `title`, `description`
-- Static visual — `bg #161618`, `1px solid rgba(255,255,255,0.08)`, `radius 16px`, `padding 28px / 24px`
-- Header row: `index` (left, white/45) + `label` (right, tracking-wider, white/85). Below: dashed horizontal divider (`repeating-linear-gradient`, white/18)
-- Headline: 28px Outfit Bold. Description: 15px Inter, white/65
+### `<BottomSilhouettes>` (new)
+- Three fitness silhouettes that bounce up from below the viewport with `easeOutBack` overshoot. There was an outstanding plan to extend the foreground silhouette downward with a solid color rectangle to cover the overshoot-gap that briefly reveals the red footer panel — see `.claude/plans/when-the-silhouettes-pop-crispy-bee.md`. Not implemented yet
 
-### `<TapBeacon>` (helper inside `ScrollSequence.tsx`)
-- `tapP` — two `motion.div` concentric rings, both 180×180 circles with 2px solid `currentColor` border, anchored at `(73.8%, 51%)`
-- Lead: scale `0.4 → 3`, opacity keyframes `[0, 0.1, 1] → [0, 0.8, 0]`
-- Trail: scale `0.4 → 2.2`, opacity keyframes `[0.3, 0.4, 1] → [0, 0.6, 0]`
-- Rendered **before** `<PhoneTap>` in JSX so the phone paints on top
+### `<OrgCarousel>`
+- Wrapper changed from `<motion.div onClick>` → `<motion.button type="button">` to neutralize Chrome's email-autofill heuristic. `aria-label`, `tabIndex`, `disabled` wired so keyboard nav matches visual interactivity
+
+### `<PhoneTap>` (helper in ScrollSequence.tsx)
+- Same composite transform approach as 2026-05-29
+- Screen content now swaps based on scroll phase — `HomeWorkoutView` → `ExerciseRedprintView` → `AIChatbotView` → `CommunityView` → `GroupChallengeDetailView` → `TierAchievementCongratulationsView` → `WorkoutHistoryAnalysisView`
+
+### `<Hero>` (significant change since last update)
+- "Redprint for gyms" CTA renamed to "Contact us" — opens `<ContactModal>`
+- "Request your gym" CTA opens `<RequestGymModal>`
+- GSAP-controlled elements (front phones, logo mark, org carousel, CTAs) now start at `opacity: 0` from first paint — kills the flash of "scene at rest" between hydration and the opening timeline starting
+- Below 680px viewport, switches to a stacked layout (phones on top, text below). `isNarrow` matchMedia listener at `(max-width: 679px)`. Phone width drops from 260px → 170px
 
 ---
 
-## 8. Theme system
+## 9. Mobile responsive home page (`components/mobile/MobileHome.tsx`)
 
-- `<html data-theme="dark|light">` toggled by user (button somewhere in the layout — not in scope here)
+Below the `md` breakpoint, `<HomePageSwitcher>` renders `<MobileHome>` instead of `<ScrollSequence>`. Pure vertical scroll, no scroll-tied animations.
+
+Sections (in order):
+1. **MobileHero** — "Fitness AI that knows your gym" headline, body, Download / Request CTAs, a single featured PhoneFrame (HomeWorkoutView at 260px), org marquee
+2. **MobileHowItWorks** — 6 stacked steps (matching the desktop "How it works" labels). Each step has a number, label, headline, description, and a small visual (tag badge or a PhoneFrame at 220px showing the relevant screen)
+3. **MobilePillars** — vertical stack of the three pillars
+4. **MobileTestimonials** — vertical stack of testimonial cards. Reads `TESTIMONIALS` array from `TestimonialsLayer`
+5. **MobileFinalCTA** — Download / Request / Contact buttons
+6. **SiteFooter** (shared)
+
+Modals: `<RequestGymModal>`, `<ContactModal>`, `<DownloadModal>` are mounted at the `<MobileHome>` level — any inner button can open them by calling `setRequestOpen(true)` etc.
+
+`MobileMenuDrawer` is opened by the Nav hamburger (NOT MobileHome's responsibility). It surfaces How it works, Testimonials, Contact, Download, Sign in.
+
+### First-paint flash elimination
+
+`app/page.tsx` reads `User-Agent` server-side via `next/headers` and passes `initialView` to `<HomePageSwitcher>`. SSR ships the correct tree — no flash of desktop on mobile or vice versa. Client `matchMedia` listener still runs to handle browser-resize.
+
+This makes the home page dynamically rendered (not statically cached) because `headers()` opts out of static. Acceptable for a marketing site at current traffic.
+
+---
+
+## 10. Modals + Resend email integration
+
+### Modal shape (all three follow the same template)
+- `<motion.div>` backdrop + `<motion.div>` card with `stopPropagation()`
+- `pointer-events-auto` on the outer container — defensive against `pointer-events-none` parents (Nav uses `pointer-events-none` to let scroll through)
+- Backdrop is a `<div>` (not a `<button>`) — dismissal gesture, not button activation
+- Close X has explicit `stopPropagation()` + `type="button"`
+- ESC handler + body scroll lock via `useEffect`
+
+### `<RequestGymModal>`
+- Member/Owner toggle. Owner label is **"I represent a gym"** (was "I'm a gym owner")
+- Three required fields: gym name, location, email
+- Honeypot input named `company`, visually hidden, treated as bot signal server-side
+- Posts to `/api/request-gym`
+- All em-dashes removed from copy ("48 hours. No demo decks…", "Thanks. We'll be in touch.", "keep scrolling. There's more…")
+
+### `<ContactModal>`
+- Name, email, message
+- Posts to `/api/contact`
+- The label was corrected from "You message" → "Your message"
+
+### `<DownloadModal>`
+- Two QR codes (App Store, Play Store) above two clickable store pills
+- Pills link to the real URLs from `lib/constants.ts`:
+  - `APP_STORE_URL = https://apps.apple.com/us/app/redprint/id1539200045`
+  - `PLAY_STORE_URL = https://play.google.com/store/apps/details?id=com.redprint.fitness`
+
+### API routes
+
+`/api/request-gym` and `/api/contact` are server-only POST handlers. Validate, honeypot-check, fire Resend send, optional Slack webhook.
+
+**Required env vars** (set on Vercel for Production + Preview, Sensitive ON for API_KEY only):
+
+```
+RESEND_API_KEY              re_… (sending-access key scoped to tapredprint.com)
+REQUEST_GYM_FROM_EMAIL      Redprint <hello@tapredprint.com>
+REQUEST_GYM_REPLY_TO_EMAIL  mheitz@redprintfit.com
+REQUEST_GYM_CONTACT_EMAIL   mheitz@redprintfit.com
+REQUEST_GYM_FOUNDER_EMAIL   mheitz@redprintfit.com
+```
+
+The site sends From `@tapredprint.com` (the only domain Resend can verify — see §15 for why redprintfit.com couldn't be used), with Reply-To set to `@redprintfit.com` so replies land in the real inbox.
+
+### Email templates (`lib/email/templates.ts`)
+
+- `founderNotifyTemplate(submission)` → sent to `REQUEST_GYM_FOUNDER_EMAIL` when a submission comes in
+- `memberAutoReplyTemplate(submission)` → auto-reply when role = member
+- `ownerAutoReplyTemplate(submission)` → auto-reply when role = owner
+- `contactNotifyTemplate(submission)` → sent to `REQUEST_GYM_CONTACT_EMAIL` for Contact form submissions
+
+All em-dashes removed across templates. Logo dimensions set to 160×32 (was 140×32 which compressed the natural 5.04:1 aspect ratio). Calendly URL is `https://calendly.com/mikeheitz/30min`.
+
+### Dev preview
+
+`/email-preview` (page) + `/api/email-preview` (route) — visit `/email-preview?t=owner` etc. to render any template in the browser.
+
+---
+
+## 11. Legal pages (`/privacy`, `/terms`)
+
+Shared layout component: `components/legal/LegalPage.tsx`. Centered narrow column, title + "Last updated" header, prose styling via descendant arbitrary variants on a single wrapper div, `SiteFooter` below.
+
+### `/privacy` (`app/privacy/page.tsx`)
+- Source: the canonical Privacy Policy from `https://www.redprintfit.com/privacy` (the live URL had real text in the rendered page even though raw HTML scrape was empty)
+- Fixes applied:
+  - Company address: `1576 Sweet Home Rd Suite 209#7` → `1576 Sweet Home Rd, Suite 209 #7, Buffalo, NY 14228`
+  - Country definition: `New York, United States` → `United States` (NY is a state)
+  - Contact email: `redprintfit@gmail.com` → `info@redprintfit.com`
+  - Last updated: bumped to June 5, 2026 (material change due to new sections)
+- **New sections added:**
+  - "Your Rights Under the GDPR" — 8 enumerated rights, legal-basis paragraph, international-transfers paragraph (Standard Contractual Clauses)
+  - "Your Rights Under the CCPA" — 6 enumerated rights, explicit "we do not sell" statement, categories of PI collected in last 12 months, request submission instructions (45-day response window)
+
+### `/terms` (`app/terms/page.tsx`)
+- Source: canonical Terms of Use from old `https://www.redprintfit.com/termsofuse`
+- Fixes:
+  - Email → `info@redprintfit.com` (5 occurrences)
+  - Address → full with Buffalo NY 14228
+  - Phone → `(518) 925-4051` (was `5189254051`)
+  - §15 Privacy URL → relative `/privacy` link
+  - §20 grammar: `more than one (1) years` → `more than one (1) year`
+  - §20 venue: `United States of America, New York` → `the State of New York, United States`
+  - Table of contents removed (29 H2 headings serve the same nav purpose)
+  - Last updated → June 5, 2026
+
+### Source-of-truth markdown files
+
+On the user's desktop:
+- `/Users/michaelheitz/Desktop/Redprint Privacy Policy.md` — canonical markdown for in-app porting
+- `/Users/michaelheitz/Desktop/Redprint Terms of Service.md` — canonical markdown for in-app porting
+
+Each has a "Source of truth" preamble + "Changelog vs. previous version" trailer (notes for the iOS-team Claude window, NOT user-facing content). Companion prompt was prepared to hand to the iOS Claude window so it can replace the in-app `TermsAndConditionsView` and create a new `PrivacyPolicyView`.
+
+---
+
+## 12. Nav + Footer (`components/layout/`)
+
+### `<Nav>`
+- Fixed top, `pointer-events-none` so scroll passes through, with interactive children setting `pointer-events-auto`
+- **Desktop (≥ md):** Redprint wordmark (CSS-masked PNG so it flips with theme via currentColor) → How it works / Testimonials / Download / Sign in / ThemeToggle. Gap is `gap-6` for outer items, `gap-3` for Download/Sign-in/Theme cluster
+- **Mobile (< md):** Download pill + hamburger
+- "How it works" and "Testimonials" use the path-aware smart-scroll pattern:
+  - On `/`: `document.getElementById("mobile-hiw" / "mobile-testimonials")` if present (mobile anchors), else `scrollToVh(SCROLL_TARGETS.howItWorks / .testimonials)` (desktop vh targets)
+  - On other routes: `router.push("/#hiw" / "/#testimonials")` — handled by `HashScrollTarget` on home mount
+- Mounts `<DownloadModal>`, `<ContactModal>`, `<MobileMenuDrawer>`
+
+### `<SiteFooter>`
+- Now a client component (was server) — `"use client"` because it owns modal state + smart-scroll handlers
+- **PRODUCT column**: How it works → smart-scroll; Testimonials → smart-scroll; Web app (still points at dead `#web-app` anchor — open question for follow-up)
+- **COMPANY column**: Contact → opens `<ContactModal>`
+- **CONNECT column** (social): Instagram → `https://www.instagram.com/tapredprint/`, TikTok → `https://www.tiktok.com/@redprintfit`, LinkedIn → `https://www.linkedin.com/company/redprint-inc/`. All open in new tab (`target="_blank" rel="noopener noreferrer"`)
+- **QR/store pills** on the right: each `<StoreColumn>` now wraps in an `<a>` linking to the real store URL (was a non-interactive `<div>`)
+- **Bottom row**: © 2026 Redprint, Inc. + Privacy Policy `/privacy` + Terms of Service `/terms`
+
+---
+
+## 13. Favicon + theme defaults
+
+### Circular SVG favicons (`public/favicon-{light,dark}.svg`)
+- Source: `Redprint Files/Marketing/New Wesbite Design/Redprint logos bw/redprint_logo_{light,dark}.png` (1156×1156 RGBA PNGs)
+- SVG wraps the source PNG (embedded as base64) with a `<clipPath>` circle → corners become transparent, browser-side
+- File size: ~32KB each (base64 overhead ~33% over the source PNG). Browsers cache favicons forever — one-time cost
+- Wired via `metadata.icons` in `app/layout.tsx` with `media: "(prefers-color-scheme: {light,dark})"` so the browser picks the right one based on the OS theme
+- Old `app/favicon.ico` (Next default) removed
+
+### System-theme default
+
+`noFlashScript` in `app/layout.tsx` runs before any markup paints:
+- If `localStorage.theme` is `'light'` or `'dark'` → use it (user has manually overridden via ThemeToggle)
+- Else read `matchMedia('(prefers-color-scheme: dark)').matches` and use that
+- If both throw (private mode, etc.) → fall back to `'dark'`
+
+ThemeToggle still writes `localStorage.theme` on click. So:
+- New visitor in dark-mode OS → dark site
+- New visitor in light-mode OS → light site
+- Returning visitor who clicked the toggle → their stored choice always wins
+
+**Note:** the site does NOT currently re-evaluate the OS preference live (would need a `matchMedia` listener gated on "no localStorage override"). If the user changes their OS theme while the tab is open, the site doesn't update until refresh. Acceptable for now; ~10 lines to add live-update later.
+
+---
+
+## 14. Deployment & DNS state
+
+### Vercel project: `redprint-web`
+- GitHub repo: `https://github.com/redprintfit/redprint-web`
+- Auto-deploys from `main`
+- Production URL: `https://www.tapredprint.com` (also `https://tapredprint.com`, `https://redprint-web.vercel.app`)
+- Environment variables: see §10 list above. All five are configured on Production + Preview
+
+### DNS for `tapredprint.com` (GoDaddy)
+- Pointed at Vercel via the standard A / CNAME setup
+- Resend auto-configured the DNS via GoDaddy OAuth — domain is **verified** in Resend (DKIM TXT + MX `send` + SPF TXT + optional DMARC TXT all green)
+
+### DNS for `redprintfit.com` (Wix — still primary)
+- Nameservers `ns14.wixdns.net`, `ns15.wixdns.net` — not migrated
+- **Wix DNS does not support MX records on subdomains**, which Resend requires. So Resend could not be verified against `redprintfit.com` while it's hosted on Wix
+- Long-term options if the user wants emails to come from `@redprintfit.com`:
+  1. Transfer the domain registration out of Wix (Cloudflare Registrar, Porkbun, etc.), then manage DNS at the new registrar. Wix site can stay live by adding A records pointing at Wix's IPs
+  2. Subdomain delegation: NS-delegate a subdomain (e.g. `mail.redprintfit.com`) to Cloudflare in Wix's DNS panel. From address becomes `team@mail.redprintfit.com` — workable but ugly
+- For now: From address is `Redprint <hello@tapredprint.com>` with `Reply-To: mheitz@redprintfit.com` so replies still go to the real inbox
+
+---
+
+## 15. Theme system (unchanged from 2026-05-29 except where noted)
+
+- `<html data-theme="dark|light">` toggled by `ThemeToggle`
 - Tailwind v4 `@custom-variant light` defined in `app/globals.css`
-- Color tokens: `--color-bg-base`, `--color-fg-base` (white in dark, near-black in light)
+- Color tokens: `--color-bg-base`, `--color-fg-base`
 - `useTheme()` hook in `lib/useTheme.ts` reads the attribute
-- Theme-aware techniques used:
-  - `text-fg-base/50` utility — using currentColor inside `repeating-linear-gradient` for dashed lines so they invert with theme
-  - `currentColor` inside `backgroundColor` for CSS-masked silhouettes (lat-pulldown)
-  - Inline conditional on `isDark` for the centre tag glow + the phone `filter: invert(1)`
-- **Known artifact (pre-existing, NOT from this work):** hydration mismatch warning on `data-theme` because the attribute is applied client-side. Logs are harmless
+- **New:** `data-theme` initial value now respects OS `prefers-color-scheme` instead of always defaulting to dark (see §13)
 
 ---
 
-## 9. Session history (chronological)
+## 16. Session history (everything new since 2026-05-29)
 
-This is the working log of what we built/changed in the most recent session. Earlier session details (Hero, Pillars, line formation) are in the previous summary.
+Roughly chronological. The bulk of this was multiple sessions before the most recent one; the most recent session was email/DNS/deploy/legal/favicon polish.
 
-1. **Tags section built.** 7 tags (6 orgs + generic centre), bouncy scale-in via spring stagger, cursor parallax with per-tag spring config variation, ambient floating via `useTime` + per-tag phase/speed sine waves
-2. **Description text "Interactive Redprint tags are placed on gym equipment"** — typed in via `TypewriterText` driven by `tagTextTypeP`, in Outfit Black 4.25rem
-3. **Step-1 breathe** added (200vh, later cut to 100vh)
-4. **Equipment + place phase.** Lat-pulldown silhouette fades in via CSS mask. `placeP` drives 1× → eventually 16× scale on the equipment AND slides the centre tag from its starting position to the equipment centre (73.8%, 51%)
-5. **Description text fade-out fix.** User complained text was disappearing abruptly. After two tries (the second using `useTransform` directly on `motion.div` for smoother opacity), the final solution was: reverse the typewriter (un-type) instead of opacity fade. `tagTextTypeP` now types in, holds, then types out
-6. **Lat-pulldown size iterations.** User asked for: 5× → 8× → 15× → 16×. Final: `scale = 1 + 15 × placeP`
-7. **Centre tag x-position iterations.** 74% → 72% → 73% → 73.9% → 73.8%. Final: `placeTarget = {x: "73.8%", y: "51%"}`
-8. **Tap phase added.** New constants `TAP_START`, `TAP_RISE_END`, `TAP_END` defined on raw `scrollYProgress` past `STEP1_LIMIT`. New text "Tap your phone against a tag" on the LEFT side, right-aligned via `text-align: right`. New `PhoneTap` helper that slides up from 100vh below to top:51% (tag's mid-line). 25vh of tap impact at the end with scale 1 → 0.93
-9. **Beacon added.** `TapBeacon` two concentric rings expanding from the contact point. Initially rendered after the phone; later swapped to render *before* it so the phone paints on top
-10. **Equipment dims to 25% as tap text types in.** Added `dimP` prop to `LatPullImage`; passed `tapTypeP` for it
-11. **Tap text iterations.**
-    - Originally "Tap against a tag", changed to "Tap your phone against a tag"
-    - Built `TypewriterText` `reverse` prop (chars appear from end first) — user said this was wrong, dropped the prop, kept normal LTR typing with `text-align: right`
-    - Position iterations: `left:8% right:56%` → `30%/35%` → `27%/38%` → `22%/43%` (current). Trailing edge ends at ~57% vw
-12. **"Interactive Redprint tags…" position nudged** to `left:60% right:4%` (was 56%/8%)
-13. **100vh post-tap breathe added.** Bumped TOTAL_VH; the progress line was extended to include this breathe (and later, to include the step-2 transition too — fills up to scroll = 1.0)
-14. **"How it works" step order reordered.** "Gym-specific AI" moved from slot 2 to slot 4; Tap-to-track and On-demand learning each moved up one. Final order in `HowItWorksSteps.LABELS`
-15. **Step 1 → Step 2 transition built.** Added 300vh (later cut to 225vh, see #18) for the new transition phase. Single `step2TransitionP` drives:
-    - Dot 1 opacity 50% → 100% (via `LoadingRing` per-dot opacity rules)
-    - Dot 1 slides from collapsed-bottom back to its lineY slot under dot 0
-    - Dot 1's label + dashed line ramp 0.25/0.4 → 1.0
-    - Equipment fade-out (new `fadeOutP` prop)
-    - Centre tag fade-out (new `centreFadeOutP` prop on `RedprintTags`)
-    - "Tap your phone…" text un-types (initially over full window; later moved to fast 10vh, then 25vh window via `tapTextFadeP`)
-    - Phone repositions to (`left: 40%`, `top: 50%`) and shrinks 10% (compounded scale 0.93 × 0.9)
-16. **Un-reached dots @ 50%.** All collapsed dots except dot 0 default to 50% opacity in `LoadingRing`. The dot at linePos 1 ramps up to 100% with `step2TransitionP`
-17. **Phone x-position iterations during step-2.** 25% → 35% → 40% → 50% → reverted to 40%
-18. **Step-2 transition window cut by 25%.** 300vh → 225vh. Recomputed all dependent constants:
-    - `TOTAL_VH 4900 → 4825`
-    - `STEP1_LIMIT 0.875 → 0.8889`
-    - `TAP_RISE_END 0.90625 → 0.9206`
-    - `TAP_END 0.91667 → 0.9312`
-    - `STEP2_TRANSITION_START 0.9375 → 0.9524`
-    - Step-1 phases keep their original 0-1 fractions (the remap handles it)
-19. **Phone vertical centering fix.** With `transform-origin: 50% 0%`, scaling shrinks the visible phone *anchored at the top* of its layout box. `translateY(-50%)` of the layout box was therefore pulling the phone too far up — the visual centre ended up at ~43vh instead of 50vh. Fix: `centreYPct = -50 × transitionP × s` (multiply by current scale `s`). Now visual centre lands on y=50vh
+### Scroll sequence (Steps 3 → 6 + post)
 
----
+1. **Step 3 (ON-DEMAND LEARNING) built.** `step3TransitionP`, `learn{1,2,3}P`, `LEARN_START / LEARN_END`. Phone screen swap to `ExerciseRedprintView`. Three learning cards on the right
+2. **Step 4 (GYM-SPECIFIC AI) built.** Two sub-phases (`equipP`, `chatP`). New `<EquipmentCluster>` component. Phone shows `AIChatbotView`
+3. **Step 5 (COMPETE/COMMUNITY) built.** `competeP` cycles the phone through `CommunityView` → `GroupChallengeDetailView` → `TierAchievementCongratulationsView`. Captions: "Monthly gym leaderboard", "Form groups with friends", "Earn rewards from your gym"
+4. **Step 6 (VISUALIZE PROGRESS) built.** Phone fan → multiple `WorkoutHistoryAnalysisView` instances + chart reveals
+5. **Exit phase added.** `EXIT_END = 0.8114`. Phones + left menu fade out
+6. **Testimonials section built.** `<TestimonialsLayer>`. Bitcount Grid Single dot-matrix font + canvas character-to-coordinates trick. Dots route to per-letter targets, then collapse to per-quote cards. Exports `TESTIMONIALS` array
+7. **Request-Your-Gym form section built.** End-of-page `<RequestGymForm>` rendered at scroll bottom
+8. **Bottom silhouettes added.** Three fitness silhouettes bouncing up from below with `easeOutBack` overshoot
+9. **Footer auto-play "latch".** Once scroll crosses the threshold, the formation animation runs on time (NOT scroll-tied) via `useTime`. Wheel keeps spinning post-latch via `footerSpinDriverP`. `formTextP = (v - 0.80) / 0.18` (was 0.58/0.241 — tightened the text-reveal window)
+10. **Pillar highlight system.** Per-pillar animations: day-swap, play-button press, leaderboard swap
+11. **Many vh-reduction passes across moments 1–39.** `TOTAL_VH` shrunk 5525 → 5269. Per memory: when reducing vh in ScrollSequence, the saved vh must shrink TOTAL_VH — never flow into another phase (especially not the trailing footer). The CSV at `~/Desktop/redprint_scroll_sequence.csv` is NOT auto-updated after timing changes — only update it when explicitly asked
 
-## 10. Where we left off
+### Marketing-site infrastructure (entirely new for this doc)
 
-The most recent message exchange ended with:
-- Phone target: `left: 73.8% → 40%`, `top: 51% → 50%`
-- Composite transform with the `× s` scale-aware Y centring (item #19 above)
-- Visual centre of phone now correctly at viewport (40%, 50%)
+12. **Modals built.** `<RequestGymModal>`, `<ContactModal>`, `<DownloadModal>`. All with backdrop + stopPropagation pattern. `pointer-events-auto` override to defeat Nav's `pointer-events-none`
+13. **Resend wired.** `/api/contact`, `/api/request-gym`. Honeypot, validation, founder notification, auto-reply, optional Slack webhook. Templates in `lib/email/templates.ts`. Dev preview at `/email-preview`
+14. **`tapredprint.com` set up.** GoDaddy DNS → Vercel. Auto-configured DNS for Resend via GoDaddy OAuth. Domain verified, sending live
+15. **Wix → Cloudflare DNS migration attempted for `redprintfit.com`, abandoned.** Wix wouldn't allow nameserver edits while the domain is assigned to a site; user needs to keep it assigned. Even adding records in Wix directly was blocked because Wix doesn't support subdomain MX (Resend requirement). Pivot: use `tapredprint.com` as the sending domain, set Reply-To to `mheitz@redprintfit.com` so replies still land in the real inbox
+16. **App store URLs corrected.** `lib/constants.ts`. Apple: `apps.apple.com/us/app/redprint/id1539200045`. Play: `play.google.com/store/apps/details?id=com.redprint.fitness`
+17. **Mobile responsive home page built.** `MobileHome` (5 sections), `HomePageSwitcher` (viewport gate), `MobileMenuDrawer` (hamburger overlay)
+18. **Mobile-only HomePageSwitcher SSR fix.** First implementation returned `null` from SSR; iPhone showed a blank body. Switched to default `"mobile"` so SSR ships content. Later, switched again to server-side UA detection in `app/page.tsx` so desktop visitors don't see a flash of mobile and vice versa
+19. **Nav rewrite.** Added Download pill before Sign in. Mobile variant added (Download + hamburger). Spacing tightened. Wordmark click → smooth scroll-to-top via Lenis
+20. **Footer rewrite.** Removed "For gyms" and "Pricing". Added "Testimonials". Smart-scroll for How it works + Testimonials. Contact → opens `ContactModal`. Real Instagram / TikTok / LinkedIn URLs. QR pills + store badges now clickable
+21. **Force-reload on back-navigation.** `popstate` listener in `LenisProvider` — reloads the page so the user doesn't land mid-scroll-state on a previously-scrolled-through home page
+22. **OrgCarousel autofill fix.** `<motion.div onClick>` → `<motion.button type="button">`. Chrome was popping up email-autofill suggestions when the user clicked logos. `type="button"` neutralizes the heuristic. `aria-label`, `tabIndex`, `disabled` wired up
+23. **Hero `Redprint for gyms` → `Contact us`.** Now opens `ContactModal`
+24. **RequestGymModal: "I'm a gym owner" → "I represent a gym".** Em-dashes removed across modal copy
+25. **Legal pages built.** `/privacy` and `/terms` with shared `<LegalPage>` layout. Privacy Policy ported from old `redprintfit.com/privacy` with three fixes + new GDPR + CCPA sections. Terms ported from old `redprintfit.com/termsofuse` with multiple fixes. Source-of-truth markdown files on the user's desktop for the iOS team
+26. **Favicon: circular SVGs with media queries.** Replaces Next default. Light/dark variants picked via `prefers-color-scheme`
+27. **System-theme default.** `noFlashScript` now reads OS preference if no localStorage override. ThemeToggle still wins
+28. **First-paint flash fixes.**
+    - HomePageSwitcher: UA-based SSR initial view → no flash of wrong layout
+    - Hero GSAP-controlled elements: `initial={{ opacity: 0 }}` on motion phones + `opacity-0` class on logo mark / org carousel / CTAs wrappers → no flash of "scene at rest" before GSAP timeline starts
 
-The phone is still **tall** — at `width: 22vw` × 2.08 aspect × scale 0.837, it's ~38vw tall ≈ 68vh on a 16:9 screen. When vertically centred (centre at 50vh), its top edge is at ~16vh and the bottom at ~84vh. That's a lot of vertical real estate. The user has NOT explicitly asked to shrink it further (yet) — they only complained about *centering*, which is now fixed. If they next ask the phone "doesn't fit" or "is too tall," the two knobs are:
-- Bump the transition scale: change `(1 - 0.1 × t)` → e.g. `(1 - 0.35 × t)` for ~60% final scale → ~49vh tall when centred
-- Drop base width: `22vw` → `~14vw`
+### Deploy
+
+29. **Vercel deployment configured.** Production = `tapredprint.com`. Env vars set. Auto-deploys from `main`
+30. **Multiple successful pushes:**
+    - `ad3a8aa` mobile responsive
+    - `0a0a6e9` modals + Resend + footer rewrite + content fixes
+    - `164fd97` legal pages
+    - `b8be928` OrgCarousel TS fix (autoComplete prop removed)
+    - `8b69d7d` circular favicon + system-theme default
+    - `d50ba8b` Hero/HomePageSwitcher flash fixes
 
 ---
 
-## 11. Known issues / things to revisit
+## 17. Where we left off
 
-1. **Hydration mismatch on `data-theme`** — harmless, pre-existing. Logs only show in dev. Would need a `useEffect` + suppressed hydration warning on `<html>` to silence it
-2. **Composite transform order in `<PhoneTap>`** — fragile. The whole `style={{ left, top, transform }}` motion value approach works but if you add anything that touches `x` or `y` directly, it'll conflict with the manual `transform` string. Always edit through the composite
-3. **`TypewriterText` `reverse` mode is unused.** Kept in the component for future use but no current caller. Could be deleted if you want a smaller surface
-4. **Phone PNG aspect lookup** — we hard-coded width:22vw based on visual judgment. If the PNG is ever swapped, the centering math (which uses `-50 × t × s`) still works because it's purely a fraction of layout height — but the absolute vh footprint changes
+Last action: pushed `8b69d7d` + `d50ba8b` to `main`. Vercel auto-deployed. Site is live at `tapredprint.com` with:
+- Circular SVG favicons responding to OS theme
+- Site default theme follows OS preference (manual ThemeToggle override wins)
+- No flash of mobile-on-desktop or desktop-on-mobile (UA-based SSR)
+- No flash of Hero "scene at rest" before GSAP opening animation
+
+**What's working:**
+- All 6 scroll-sequence steps
+- Mobile responsive page
+- Contact + Request-Gym forms (Resend verified, sending from `hello@tapredprint.com`)
+- Legal pages (`/privacy`, `/terms`)
+- Footer (smart scroll, real social URLs, clickable store pills)
+
+**What's NOT done:**
+- `redprintfit.com` DNS is still on Wix → emails will continue coming from `tapredprint.com` until that's resolved
+- "Web app" footer link still points at dead `#web-app` anchor
+- iOS app legal text still references old EULA — handoff prompt is ready, needs to be pasted into the iOS-team Claude window
+- The silhouette-overshoot gap (plan at `.claude/plans/when-the-silhouettes-pop-crispy-bee.md`) is not yet applied
+- CCPA/GDPR sections in Privacy Policy should be reviewed by counsel before relying on them
+- No live-update listener for OS theme change while the tab is open
 
 ---
 
-## 12. Tunable knobs (most likely tweaks)
+## 18. Known issues / things to revisit
 
+1. **Web app footer link** — `<a href="#web-app">` is a dead anchor. Likely should point at `https://app.redprintfit.com` (= `WEB_APP_URL` in `lib/constants.ts`) or be removed entirely
+2. **Silhouette bounce-in gap** — at the end of the section, the foreground fitness silhouette overshoots its rest position via `easeOutBack`, briefly revealing the red footer panel underneath. Plan exists in `.claude/plans/when-the-silhouettes-pop-crispy-bee.md` — wrap the silhouette img in a motion.div that includes a 200px tall extension below it, colored `bg-black light:bg-white`. Glued to the silhouette's bottom edge so it moves with the bounce
+3. **`headers()` in `app/page.tsx` opts out of static rendering.** Acceptable now; if traffic grows and TTFB matters, consider middleware-based viewport hint cookies or pre-rendering both trees with CSS-driven swap
+4. **`TypewriterText` `reverse` mode** is unused — kept in the component for future use
+5. **Composite transform order in `<PhoneTap>`** is fragile (works but conflicts if anything else touches `x`/`y` directly)
+6. **No accessibility pass.** No aria audit, no focus management on modals beyond ESC + backdrop, no `prefers-reduced-motion` honoring
+7. **Hydration mismatch on `data-theme`** — harmless, pre-existing. Logs only show in dev
+
+---
+
+## 19. Tunable knobs
+
+### Scroll sequence
 | To change… | Edit |
 |---|---|
-| Phone post-transition x position | `73.8 - (73.8 - 40) * v` in `<PhoneTap>` — change `40` |
-| Phone post-transition y position | `51 - v` in `<PhoneTap>` — change `51` and `50` (currently lerps 51→50) |
-| Phone size in new position | `(1 - 0.1 * t)` in scale formula — bump `0.1` to shrink more |
-| Phone width baseline | `width: "280px"` in `<PhoneTap>` — fixed pixel width, no viewport scaling |
-| Equipment max zoom | `1 + v * 15` in `<LatPullImage>` |
-| Beacon ring size | `width: 180, height: 180` in `<TapBeacon>` |
-| Tap text disappear speed | `0.00529` in `tapTextFadeP` window (= 25vh / 4725vh scrollable) |
-| Length of step 2 transition | `STEP2_TRANSITION_START` / `STEP2_TRANSITION_END` (and recompute TOTAL_VH + sibling raw-scroll constants to preserve other phases' absolute vh) |
-| Tracking cards reveal length | `CARDS_END` (and recompute TOTAL_VH). `CARD_SUBPHASE = (CARDS_END - CARDS_START) / 3` is derived |
-| Card-line vs card-flicker split | `LINE_END` constant in `TrackingCards.tsx` (default 0.6) |
-| Card vertical stack positions | `CARD_TOP_VH = [12, 42, 72]` in `TrackingCards.tsx` |
-| Card horizontal position + width | `right: 5vw` / `width: min(440px, 36vw)` in `<CardSlot>` |
-| Centre tag target on equipment | `placeTarget={{x:"73.8%", y:"51%"}}` in `<RedprintTags>` prop |
+| Total scroll length | `TOTAL_VH` in `ScrollSequence.tsx`. Remember to shrink (never grow into the footer) per memory |
+| Step-1 share of timeline | `STEP1_LIMIT` |
+| Step 2 cards stagger | `CARDS_START / CARDS_END` |
+| Step 3 cards stagger | `LEARN_WINDOW`, `LEARN_STAGGER` |
+| Step 4 split between equipment + chat | `EQUIP_END` (also = `CHAT_START`) |
+| Step 5 caption swap timing | `COMPETE_TITLE_END` |
+| Step 6 fan-vs-progress split | `FAN_END` (also = `PROGRESS_START`) |
+| Section exit duration | `EXIT_END` |
+| Testimonials phase | `TEST_WHEEL_EXTRA_END`, `TEST_DOT_SPREAD_END`, `TEST_LINES_END`, `TEST_CARDS_END` |
+| Footer formation text-reveal window | `formTextP = (v - 0.80) / 0.18` |
+| Anchor targets (Nav / Footer scroll) | `SCROLL_TARGETS` in `lib/scrollTargets.ts` |
+| Phone post-transition x/y/scale | `<PhoneTap>` composite transform in ScrollSequence.tsx |
+| Card-line vs card-flicker split | `CARD_LINE_FRAC` (default 0.6) |
+| Card horizontal position | `right: 5vw` / `width: min(440px, 36vw)` in `<CardSlot>` |
+| Centre tag target on equipment | `placeTarget={{x:"73.8%", y:"51%"}}` |
 | Order of menu steps | `LABELS` array in `HowItWorksSteps.tsx` |
-| Tag glow colors | `glow` field on each entry in `TAGS` array in `RedprintTags.tsx` |
-| Un-reached dot floor opacity | `0.5` in the post-collapse opacity logic in `LoadingRing.tsx` (search "postCollapseOpacity") |
+
+### Email + modals
+| To change… | Edit |
+|---|---|
+| From address | `REQUEST_GYM_FROM_EMAIL` Vercel env var |
+| Reply-To target | `REQUEST_GYM_REPLY_TO_EMAIL` Vercel env var |
+| Where notifications go | `REQUEST_GYM_CONTACT_EMAIL` + `REQUEST_GYM_FOUNDER_EMAIL` |
+| Email body / styling | `lib/email/templates.ts` |
+| Calendly link in owner auto-reply | `https://calendly.com/mikeheitz/30min` in `templates.ts` |
+| Modal copy | Respective `…Modal.tsx` |
+| App store URLs | `lib/constants.ts` |
+
+### Theme + favicon
+| To change… | Edit |
+|---|---|
+| Default theme behavior | `noFlashScript` in `app/layout.tsx` |
+| Favicon images | `public/favicon-{light,dark}.svg` (regenerate via the base64-embed pattern) |
+| Mobile breakpoint for HomePageSwitcher | `(max-width: 767px)` in `HomePageSwitcher` and the UA regex in `app/page.tsx` |
 
 ---
 
-## 13. Next steps (proposed scope for next session)
+## 20. Next steps (proposed scope)
 
-The transition INTO step 2 is built. What still needs to happen:
-
-**Build Step 2 ("TAP-TO-TRACK") content.** The phone is positioned on the left side and ready to receive screen content. Likely needs:
-- A "TAP-TO-TRACK" headline somewhere (top? right of phone? — the previous step-1 headlines used right-of-content positioning)
-- App UI mockups appearing INSIDE the phone screen (or overlaid)
-- Probably a "lookup" animation showing the user tracking a set/rep — the phone shows real interface elements
-- Whatever supporting copy describes how tap-to-track works
-
-**Plan inter-step transitions.** The pattern established by Step 1 → Step 2 transition is:
-- Old content fades/un-types
-- The next un-reached dot moves up + activates (50% → 100%)
-- The "persistent" element from the previous step (in this case the phone) repositions/resizes
-
-Step 2 → Step 3 will need: phone moves again? Some new persistent element? TBD. Each step should follow the same dot-activation pattern.
-
-**Things still TODO that aren't step-2-content:**
-- Browser-tested only at default viewport. Mobile responsive behavior is unknown / undefined
-- No accessibility pass yet (aria, focus management, prefers-reduced-motion)
-- The hero opening was tested with the previous TOTAL_VH=4300; the rescale to 4825 should preserve it, but worth a smoke-test scroll-through
+1. **Resolve the `redprintfit.com` DNS situation** — transfer registrar out of Wix so Resend can be verified there and emails can come from `@redprintfit.com` instead of `@tapredprint.com`
+2. **Hand the legal-docs prompt to the iOS Claude window** to update the in-app `TermsAndConditionsView` and create the new `PrivacyPolicyView` — both pulling text from the canonical markdown files on the desktop
+3. **Decide on the "Web app" footer link** — point at `https://app.redprintfit.com` or remove
+4. **Apply the silhouette-overshoot gap fix** per `.claude/plans/when-the-silhouettes-pop-crispy-bee.md`
+5. **Counsel review of GDPR + CCPA sections** before relying on them
+6. **Optional polish:**
+   - Live OS-theme listener (re-evaluate on `(prefers-color-scheme)` change when no localStorage override)
+   - Open Graph image (`<meta property="og:image">`) so link previews on Slack / iMessage / Twitter show a real preview rather than generic
+   - Accessibility audit + `prefers-reduced-motion` honoring
+   - Smoke-test the deploy: submit Contact + Request-Gym forms from `tapredprint.com`, verify emails land in `mheitz@redprintfit.com` and auto-replies fire
 
 ---
 
-## 14. Quick scroll-through reference
+## 21. Quick scroll-through reference
 
-If you need to jump to a specific phase in the browser, scroll to roughly this fraction of the page:
-
-| Phase to inspect | scrollY |
+| Phase to inspect | scrollY (raw) |
 |---|---|
 | Hero static | top |
-| Pillars cards | 0.6–0.7 of full scroll |
-| Line forms in top-left | 0.78–0.81 |
-| Tags appear | 0.83 |
-| "Interactive Redprint…" typed | 0.85 |
-| Lat-pulldown peak zoom | 0.86 |
-| Tap text typing | 0.88–0.91 |
-| Tap impact + beacon | 0.916 |
-| Step-2 transition (dot 1 moves, phone re-positions) | 0.953–1.0 |
+| Pillars cards | inside step1 |
+| Line forms in top-left | inside step1 |
+| Tags appear / "Interactive Redprint…" typed | inside step1 |
+| Lat-pulldown peak zoom | inside step1 |
+| Tap text + impact | 0.33 → 0.36 |
+| Step 1 → 2 transition (phone reposition) | 0.37 → 0.39 |
+| Step 2 cards (SPEED / MEMORY / DEPTH) | 0.39 → 0.43 |
+| Step 3 cards (LEARN) | 0.48 → 0.52 |
+| Step 4 equipment + chat | 0.55 → 0.59 |
+| Step 5 compete | 0.63 → 0.65 |
+| Step 6 fan + progress | 0.70 → 0.75 |
+| Section exit | 0.75 → 0.81 |
+| Testimonials | 0.81 → 0.87 |
+| Request-Gym form + silhouettes | 0.87 → 0.95 |
+| Footer auto-play | 0.95 + |
 | End of scroll | bottom |
 
-Inspect actual scroll fraction in DevTools console: `document.documentElement.scrollTop / (document.documentElement.scrollHeight - window.innerHeight)`
+Inspect actual scroll fraction in DevTools console:
+```js
+document.documentElement.scrollTop / (document.documentElement.scrollHeight - window.innerHeight)
+```
