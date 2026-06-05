@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const urls = {
     logoUrl:
       process.env.REQUEST_GYM_LOGO_URL ??
-      "https://redprintfit.com/logos/redprint-logo-full.png",
+      "https://www.tapredprint.com/logos/redprint-logo-full.png",
   };
 
   const resend = new Resend(apiKey);
