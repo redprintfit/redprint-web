@@ -18,6 +18,12 @@ type Payload = {
   role: "member" | "owner";
 };
 
+type ContactPayload = {
+  name: string;
+  email: string;
+  message: string;
+};
+
 type Urls = {
   appStoreUrl?: string;
   playStoreUrl?: string;
@@ -177,6 +183,37 @@ export function memberAutoReplyTemplate(p: Payload, urls: Urls) {
   ]
     .filter(Boolean)
     .join("\n");
+  return { subject, html: baseWrap(inner, urls.logoUrl), text };
+}
+
+/**
+ * Contact-form notification. Sent to the founder when someone submits
+ * the Hero "Contact us" modal. Reply-To is set at the send-site to
+ * the submitter so hitting Reply in the inbox replies to them.
+ */
+export function contactNotifyTemplate(p: ContactPayload, urls: Urls = {}) {
+  const subject = `Contact form: ${p.name}`;
+  const messageHtml = escapeHtml(p.message).replace(/\n/g, "<br/>");
+  const inner = `
+    <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;">New contact form message</h1>
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;font-size:15px;">
+      <tr><td style="padding:6px 0;color:#6b5d58;width:120px;">Name</td><td style="padding:6px 0;font-weight:600;">${escapeHtml(p.name)}</td></tr>
+      <tr><td style="padding:6px 0;color:#6b5d58;">Email</td><td style="padding:6px 0;"><a href="mailto:${encodeURIComponent(p.email)}" style="color:#d83a3a;text-decoration:none;">${escapeHtml(p.email)}</a></td></tr>
+    </table>
+    <div style="margin:24px 0 8px;font-weight:600;color:#6b5d58;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;">Message</div>
+    <div style="background:#f8f4f0;border-radius:10px;padding:16px 18px;font-size:15px;line-height:1.6;">${messageHtml}</div>
+    <p style="margin:24px 0 0;font-size:13px;color:#6b5d58;">Reply to this email to respond directly to the submitter.</p>
+  `;
+  const text = [
+    `New contact form message`,
+    `Name: ${p.name}`,
+    `Email: ${p.email}`,
+    ``,
+    `Message:`,
+    p.message,
+    ``,
+    `Reply to this email to respond directly to the submitter.`,
+  ].join("\n");
   return { subject, html: baseWrap(inner, urls.logoUrl), text };
 }
 

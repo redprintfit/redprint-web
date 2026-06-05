@@ -4,6 +4,7 @@ import {
   memberAutoReplyTemplate,
   ownerAutoReplyTemplate,
 } from "@/lib/email/templates";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/constants";
 
 /**
  * GET /api/_email-preview?t=founder|member|owner
@@ -33,12 +34,8 @@ export async function GET(req: Request) {
   const t = url.searchParams.get("t") ?? "member";
 
   const urls = {
-    appStoreUrl:
-      process.env.REQUEST_GYM_APP_STORE_URL ??
-      "https://apps.apple.com/app/example-redprint",
-    playStoreUrl:
-      process.env.REQUEST_GYM_PLAY_STORE_URL ??
-      "https://play.google.com/store/apps/details?id=fit.redprint",
+    appStoreUrl: process.env.REQUEST_GYM_APP_STORE_URL ?? APP_STORE_URL,
+    playStoreUrl: process.env.REQUEST_GYM_PLAY_STORE_URL ?? PLAY_STORE_URL,
     calendlyUrl:
       process.env.REQUEST_GYM_CALENDLY_URL ??
       "https://calendly.com/mikeheitz/30min",

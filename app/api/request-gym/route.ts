@@ -5,6 +5,7 @@ import {
   memberAutoReplyTemplate,
   ownerAutoReplyTemplate,
 } from "@/lib/email/templates";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/constants";
 
 /**
  * POST /api/request-gym
@@ -89,8 +90,8 @@ export async function POST(req: Request) {
   }
 
   const urls = {
-    appStoreUrl: process.env.REQUEST_GYM_APP_STORE_URL,
-    playStoreUrl: process.env.REQUEST_GYM_PLAY_STORE_URL,
+    appStoreUrl: process.env.REQUEST_GYM_APP_STORE_URL ?? APP_STORE_URL,
+    playStoreUrl: process.env.REQUEST_GYM_PLAY_STORE_URL ?? PLAY_STORE_URL,
     calendlyUrl:
       process.env.REQUEST_GYM_CALENDLY_URL ??
       "https://calendly.com/mikeheitz/30min",

@@ -15,6 +15,11 @@
  */
 export const SCROLL_TARGETS = {
   howItWorks: 1360,
+  // Testimonials cards visible + dwell. Lands the user roughly midway
+  // between cards-flicker-reveal completion (TEST_CARDS_END ≈ 4473 vh)
+  // and the progress bar finishing (PROGRESS_BAR_END ≈ 4617 vh), so
+  // all six cards are on screen and readable.
+  testimonials: 4500,
 } as const;
 
 /**
@@ -48,4 +53,5 @@ export const STEP_TARGETS: readonly number[] = [
  */
 export const HASH_TARGETS: Record<string, number> = {
   "#hiw": SCROLL_TARGETS.howItWorks,
+  "#testimonials": SCROLL_TARGETS.testimonials,
 };

@@ -97,15 +97,20 @@ export function OrgCarousel({
           const scaleY = SLOT_SCALE_Y[pos] ?? 0.7;
           const x = SLOT_X[pos] ?? SLOT_X[SLOT_X.length - 1] + 60;
 
+          const clickable = pos > 0 && onSelect;
           return (
-            <motion.div
+            <motion.button
               key={org.id}
-              className={`absolute left-0 top-0 ${
-                pos > 0 && onSelect ? "cursor-pointer" : ""
+              type="button"
+              autoComplete="off"
+              aria-label={clickable ? `Switch to ${org.name}` : org.name}
+              tabIndex={clickable ? 0 : -1}
+              disabled={!clickable}
+              className={`absolute left-0 top-0 border-0 bg-transparent p-0 ${
+                clickable ? "cursor-pointer" : "cursor-default"
               }`}
               onClick={() => {
-                // Click on a non-active visible logo promotes it to active.
-                if (pos > 0 && onSelect) {
+                if (clickable) {
                   onSelect((activeIndex + pos) % orgs.length);
                 }
               }}
@@ -123,7 +128,7 @@ export function OrgCarousel({
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
               <OrgLogoPlaceholder org={org} active={pos === 0} />
-            </motion.div>
+            </motion.button>
           );
         })}
       </AnimatePresence>

@@ -1193,22 +1193,92 @@ export function ScrollSequence() {
   //   End:   nextSectionP = 0.821 (= scrollYProgress ≈ 0.9929,
   //          which is the start of the SILHOUETTE_DELAY_VH buffer)
   //   Width: 0.241 of nextSectionP ≈ 135vh of scrolling
+  // Sentence-formation start now fires LATE in nextSectionP (was
+  // 0.58 → 0.821, now 0.80 → 0.98). The visual formation no longer
+  // needs scroll runway since it auto-plays once the latch fires — and
+  // moving the latch later means much less forced scrolling between
+  // "sentence starts forming" and "user can scroll past the section."
+  // The window width is narrow on purpose; only the latch threshold
+  // matters now, not the value of formTextP itself.
   const formTextP = useTransform(nextSectionP, (v) =>
-    Math.max(0, Math.min(1, (v - 0.58) / 0.241)),
+    Math.max(0, Math.min(1, (v - 0.80) / 0.18)),
   );
-  // Silhouette appearance ramp — covers the LAST 50vh of the sticky
-  // section, i.e. the buffer that sits AFTER formTextP completes.
-  // Reaching this MV's 0.95 threshold inside BottomSilhouettes
-  // triggers the silhouette bounce-in.
-  const silhouetteTriggerP = useTransform(scrollYProgress, (p) => {
-    const start = (TOTAL_VH - SILHOUETTE_DELAY_VH) / TOTAL_VH;
-    if (p <= start) return 0;
-    if (p >= 1) return 1;
-    return (p - start) / (1 - start);
-  });
+  // --- Footer auto-play -------------------------------------------------
+  // The dot-sentence formation, request-gym form fade-in, white-floor
+  // strip and silhouette bounce-in all USED to scrub directly with
+  // scroll. That made the last moments of the page feel jerky if the
+  // user wheel-flicked through. We latch on the first time scroll
+  // crosses FOOTER_AUTOPLAY_LATCH (a small threshold inside formTextP's
+  // range) and then drive everything downstream from a TIME-based ramp
+  // that auto-plays to completion over FOOTER_AUTOPLAY_DURATION_MS.
+  // Scrolling back ABOVE the latch resets the timer, so the user can
+  // rewind by scrolling up and replay by scrolling back down.
+  const FOOTER_AUTOPLAY_DURATION_MS = 3000;
+  const FOOTER_AUTOPLAY_LATCH = 0.01;
+  const time = useTime();
+  const footerAutoStartTime = useMotionValue(0);
+  // Captures nextSectionP at the moment of latch. The wheel-rotation
+  // driver uses this as the "frozen" starting value so the rotation
+  // continues smoothly from where scroll left off when control hands
+  // over to the auto-play timer (otherwise there'd be a visible jump).
+  const nextSectionPAtLatch = useMotionValue(0);
+  useEffect(() => {
+    const evaluate = () => {
+      const scrollVal = formTextP.get();
+      const startT = footerAutoStartTime.get();
+      if (scrollVal >= FOOTER_AUTOPLAY_LATCH && startT === 0) {
+        footerAutoStartTime.set(time.get());
+        nextSectionPAtLatch.set(nextSectionP.get());
+      } else if (scrollVal < FOOTER_AUTOPLAY_LATCH && startT !== 0) {
+        footerAutoStartTime.set(0);
+        nextSectionPAtLatch.set(0);
+      }
+    };
+    evaluate();
+    return formTextP.on("change", evaluate);
+  }, [formTextP, footerAutoStartTime, time, nextSectionP, nextSectionPAtLatch]);
+  const footerAutoP = useTransform(
+    [time, footerAutoStartTime] as MotionValue<number>[],
+    (vals) => {
+      const [t, startT] = vals as unknown as [number, number];
+      if (startT === 0) return 0;
+      const elapsed = t - startT;
+      return Math.max(
+        0,
+        Math.min(1, elapsed / FOOTER_AUTOPLAY_DURATION_MS),
+      );
+    },
+  );
+  // Hybrid driver for the footer wheel rotation. Pre-latch it follows
+  // nextSectionP (scroll-tied), so the wheel rotates while the user is
+  // still scrolling into the footer phase. Post-latch it interpolates
+  // smoothly from the latched value to 1 over the auto-play duration,
+  // so the remaining ~2.5 turns play out on a timer regardless of
+  // whether the user scrolls further. ringRotFinal uses this in place
+  // of nextSectionP for the footerSpin + final 70° offset terms.
+  const footerSpinDriverP = useTransform(
+    [
+      nextSectionP,
+      footerAutoP,
+      footerAutoStartTime,
+      nextSectionPAtLatch,
+    ] as MotionValue<number>[],
+    (vals) => {
+      const [ns, auto, startT, latchedNs] = vals as unknown as [
+        number,
+        number,
+        number,
+        number,
+      ];
+      if (startT === 0) return ns;
+      return latchedNs + (1 - latchedNs) * auto;
+    },
+  );
   // Fade-in for the white floor strip that gives the silhouettes a
   // clean floor to stand on at the end of the sticky scroll-sequence.
-  const whiteFloorOpacityP = useTransform(formTextP, [0.85, 1], [0, 1]);
+  // Derives from the auto-play ramp now (was formTextP) so it tracks
+  // the same fixed-duration timeline as the sentence + form + silhouettes.
+  const whiteFloorOpacityP = useTransform(footerAutoP, [0.85, 1], [0, 1]);
   const wheelVisibilityP = useTransform(logoFadeP, (v) => 1 - v);
   // Final wheel rotation — see the rotation-rate comment block much
   // earlier in this file for the multiplier rationale. Declared here
@@ -1220,7 +1290,7 @@ export function ScrollSequence() {
       ringRotRad,
       exitWheelP,
       testDotSpreadP,
-      nextSectionP,
+      footerSpinDriverP,
     ] as MotionValue<number>[],
     (vals) => {
       const [base, ew, tds, ns] = vals as unknown as [
@@ -1230,22 +1300,18 @@ export function ScrollSequence() {
         number,
       ];
       const exitSpinT = Math.max(0, (ew - 0.65) / 0.35);
-      // Footer spin uses nextSectionP DIRECTLY so the wheel
-      // rotates continuously throughout the footer phase — both
-      // while the dots are returning AND through the trailing
-      // dwell as the panel grows. 2.5 turns over the 492vh footer
-      // phase = ~197vh/turn (matches the rest of the section's
-      // rotation cadence).
+      // Footer spin uses the hybrid driver (scroll-tied pre-latch,
+      // time-driven post-latch) so the wheel rotates continuously
+      // through the dot-return phase AND keeps spinning to completion
+      // on the auto-play timer once the sentence-formation latch
+      // fires, even if the user scrolls past the sticky section.
+      // 2.5 turns over the driver's 0→1 sweep.
       const footerSpinT = ns;
       const extraTurns =
         exitSpinT * 0.7 + tds * 2.0 + footerSpinT * 2.5;
-      // Final +70° canonical-orientation wind-up tied to `ns` so it
-      // accumulates evenly across the footer phase. Baking it INTO
-      // ringRotFinal (rather than offsetting the logo separately)
-      // keeps the wheel and the logo on the SAME rotation source —
-      // they spin at identical rates the whole way through. The
-      // wheel's 6-dot orbit is rotationally symmetric so the extra
-      // 70° is visually identical to no offset on the wheel side.
+      // Final +70° canonical-orientation wind-up also rides the hybrid
+      // driver so the wheel and logo land on the same final orientation
+      // whether the user scrolled all the way or auto-play completed it.
       const finalOffsetRad = (70 * Math.PI) / 180 * ns;
       return base + extraTurns * 2 * Math.PI + finalOffsetRad;
     },
@@ -2109,7 +2175,7 @@ export function ScrollSequence() {
           indicatorOpacityP={testIndicatorOpacity}
           indicatorFillP={testIndicatorFillPct}
           footerFadeOutP={footerReturnP}
-          formTextP={formTextP}
+          formTextP={footerAutoP}
         />
         {/* Next-section reveal panel — grows from a bottom tab to
             full viewport after all six testimonial cards have
@@ -2164,12 +2230,12 @@ export function ScrollSequence() {
             opacity: whiteFloorOpacityP,
           }}
         />
-        <BottomSilhouettes formTextP={silhouetteTriggerP} />
+        <BottomSilhouettes formTextP={footerAutoP} />
         {/* Request-gym form — appears under the formed sentence as
             the user reaches the end of the section. z-[53] sits
             above the silhouettes (z-[52]) so it stays interactive
             and isn't visually crowded by the crowd in front of it. */}
-        <RequestGymForm formTextP={formTextP} />
+        <RequestGymForm formTextP={footerAutoP} />
         {/* Loading-ring overlay — lifted OUT of the bg-slide wrapper
             so it can render at z-60 in the sticky-frame's own
             stacking context (above the footer panel at z-50). The
@@ -2922,7 +2988,7 @@ function Step5Caption({
       aria-hidden={opacity < 0.05}
       className="text-fg-base font-body pointer-events-none absolute z-30 text-center"
       style={{
-        top: "87vh",
+        top: "92vh",
         left: `${leftPct}%`,
         transform: "translateX(-50%)",
         width: "min(220px, 18vw)",

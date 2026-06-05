@@ -14,6 +14,7 @@ import { OrgCarousel } from "@/components/sections/OrgCarousel";
 import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 import { RequestGymModal } from "@/components/RequestGymModal";
+import { ContactModal } from "@/components/ContactModal";
 
 const HEADLINE = "Fitness AI that knows your gym";
 const TICK_ORG_MS = 5000;
@@ -78,6 +79,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
   const [orgTick, setOrgTick] = useState(0);
   const [phoneTick, setPhoneTick] = useState(0);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
 
@@ -332,13 +334,14 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
           </div>
 
           <div ref={ctasRef} className="mt-6 flex flex-wrap items-center gap-3">
-            <a
-              href="/for-gyms"
+            <button
+              type="button"
+              onClick={() => setContactModalOpen(true)}
               className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition"
             >
-              Redprint for gyms{" "}
+              Contact us{" "}
               <span className="text-lg leading-none">›</span>
-            </a>
+            </button>
             <button
               type="button"
               onClick={() => setRequestModalOpen(true)}
@@ -353,6 +356,10 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
       <RequestGymModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
+      />
+      <ContactModal
+        open={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
       />
     </section>
   );
