@@ -102,7 +102,6 @@ export function OrgCarousel({
             <motion.button
               key={org.id}
               type="button"
-              autoComplete="off"
               aria-label={clickable ? `Switch to ${org.name}` : org.name}
               tabIndex={clickable ? 0 : -1}
               disabled={!clickable}
