@@ -64,5 +64,23 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Force a hard reload on back/forward navigation that lands on the
+  // home page. The scroll-driven sequence is 5000+ vh tall and rendering
+  // a snapshot of any mid-scroll state (which is what Next.js's SPA
+  // back-nav does by default) produces an incoherent overlap of Hero
+  // elements, sticky frame, and footer content. Reloading guarantees
+  // the user lands cleanly at the top with all animations reset.
+  // Forward navigation (via Link clicks) is unaffected — popstate only
+  // fires on browser back/forward.
+  useEffect(() => {
+    const onPop = () => {
+      if (window.location.pathname === "/") {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   return <>{children}</>;
 }
