@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 type Role = "member" | "owner";
@@ -105,13 +106,20 @@ export function RequestGymModal({
     }, 250);
   };
 
-  return (
+  // Portal to <body> so no ancestor's transform / overflow / pointer-events
+  // can affect the modal's containing block, stacking, or event routing.
+  // The modal is mounted from Hero (inside ScrollSequence's transformed
+  // tree) AND from MobileHome AND from Nav (pointer-events-none); the
+  // portal makes those mount sites irrelevant.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          // pointer-events-auto: defensive against being mounted inside
-          // a parent (e.g. Nav) that has pointer-events-none. Without
-          // this, the backdrop and close X silently swallow clicks.
+          // pointer-events-auto: defensive against parent overrides.
+          // data-lenis-prevent: Lenis ignores wheel / touch events on
+          // this subtree so scrolling and form input work normally.
+          data-lenis-prevent
           className="pointer-events-auto fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -285,7 +293,8 @@ export function RequestGymModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

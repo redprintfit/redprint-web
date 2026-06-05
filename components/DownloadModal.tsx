@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/constants";
 
@@ -32,13 +33,16 @@ export function DownloadModal({
     };
   }, [open, onClose]);
 
-  return (
+  // Portal to <body> — see RequestGymModal for rationale (ancestor
+  // transforms inside ScrollSequence break position:fixed otherwise).
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          // pointer-events-auto: this modal is mounted inside <nav>
-          // which has pointer-events-none. Without this override, the
-          // backdrop and close X are visually present but uninteractive.
+          // pointer-events-auto: defensive. data-lenis-prevent so Lenis
+          // ignores wheel/touch events inside the modal subtree.
+          data-lenis-prevent
           className="pointer-events-auto fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -129,7 +133,8 @@ export function DownloadModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
