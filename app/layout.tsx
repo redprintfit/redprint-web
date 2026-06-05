@@ -35,12 +35,27 @@ const bitcountGrid = Bitcount_Grid_Single({
 export const metadata: Metadata = {
   title: "Redprint",
   description: "Fitness AI that knows your gym.",
+  icons: {
+    icon: [
+      {
+        url: "/favicon-light.svg",
+        media: "(prefers-color-scheme: light)",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/favicon-dark.svg",
+        media: "(prefers-color-scheme: dark)",
+        type: "image/svg+xml",
+      },
+    ],
+  },
 };
 
 // Runs before any markup paints — always sets a data-theme attribute on
-// <html>. Reads localStorage; defaults to "dark" if absent. For production,
-// switch the default to system preference (matchMedia prefers-color-scheme).
-const noFlashScript = `(function(){var t='dark';try{var s=localStorage.getItem('theme');if(s==='light'||s==='dark')t=s;}catch(e){}document.documentElement.setAttribute('data-theme',t);})();`;
+// <html>. Precedence: explicit localStorage choice (set by ThemeToggle)
+// wins; otherwise follow the user's OS prefers-color-scheme; final
+// fallback is dark if both lookups throw (private mode / old browsers).
+const noFlashScript = `(function(){var t;try{var s=localStorage.getItem('theme');if(s==='light'||s==='dark')t=s;}catch(e){}if(!t){try{t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}catch(e){t='dark';}}document.documentElement.setAttribute('data-theme',t);})();`;
 
 export default function RootLayout({
   children,
