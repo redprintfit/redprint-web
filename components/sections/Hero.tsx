@@ -278,11 +278,13 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
                   // the front slot. Slot 0 (already front) is a no-op.
                   if (openingDone && slot > 0 && slot < 3) setPhoneTick(i);
                 }}
-                // Slots 0/1/2 are managed by GSAP during the opening (no
-                // initial). Slots 3/4 are off-stage (opacity 0) the whole
-                // time — give them a baked initial so they don't flash at
-                // viewport center before the first tick.
-                initial={slot >= 3 ? targets[slot] : false}
+                // Slots 0/1/2 are managed by GSAP during the opening.
+                // Match GSAP's `set()` initial state here so the elements
+                // render invisible from first paint — without this, the
+                // phones flash in their resting position between
+                // hydration and the GSAP timeline starting. Slots 3/4 are
+                // off-stage (opacity 0) the whole time.
+                initial={slot >= 3 ? targets[slot] : { opacity: 0, y: 60 }}
                 animate={openingDone ? targets[slot] : undefined}
                 transition={{ duration: ROTATION_DURATION, ease: ROTATION_EASE }}
                 style={{ zIndex: SLOT_Z[slot] }}
@@ -309,7 +311,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
               inner motion.div. `logoSlotRef` exposes the inner element so
               the scroll-sequence parent can measure where to place a
               BlobAvatar overlay. */}
-          <div ref={markRef} className="text-fg-base">
+          <div ref={markRef} className="text-fg-base opacity-0">
             <motion.div
               ref={logoSlotRef}
               style={{ rotate: logoRotation, opacity: logoOpacity }}
@@ -325,7 +327,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
             <TypewriterText text={HEADLINE} start={typingStarted} />
           </h1>
 
-          <div ref={carouselRef}>
+          <div ref={carouselRef} className="opacity-0">
             <OrgCarousel
               orgs={orgs}
               activeIndex={orgTick % orgs.length}
@@ -333,7 +335,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
             />
           </div>
 
-          <div ref={ctasRef} className="mt-6 flex flex-wrap items-center gap-3">
+          <div ref={ctasRef} className="mt-6 flex flex-wrap items-center gap-3 opacity-0">
             <button
               type="button"
               onClick={() => setContactModalOpen(true)}

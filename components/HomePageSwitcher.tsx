@@ -11,15 +11,18 @@ import { MobileHome } from "@/components/mobile/MobileHome";
  * the desktop scroll choreography's heavy useScroll/useTransform work
  * never runs on phones.
  *
- * SSR default is mobile — phones see content on first paint without
- * waiting for hydration. On client mount we swap to desktop if the
- * viewport is wide enough. Wide-viewport users see a brief flash of
- * the mobile tree before desktop mounts; phone users see nothing
- * change. `suppressHydrationWarning` because the initial server tree
- * intentionally differs from the post-effect client tree.
+ * `initialView` comes from server-side User-Agent detection in
+ * app/page.tsx, so SSR ships the correct tree for the visitor's
+ * device — no flash of the wrong layout on first paint. The client
+ * matchMedia listener still runs to handle browser-resize cases
+ * (desktop narrowed below md, etc.).
  */
-export function HomePageSwitcher() {
-  const [view, setView] = useState<"mobile" | "desktop">("mobile");
+export function HomePageSwitcher({
+  initialView,
+}: {
+  initialView: "mobile" | "desktop";
+}) {
+  const [view, setView] = useState<"mobile" | "desktop">(initialView);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const update = () => setView(mq.matches ? "mobile" : "desktop");
