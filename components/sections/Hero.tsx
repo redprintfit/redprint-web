@@ -82,6 +82,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
+  const [pillShown, setPillShown] = useState(false);
 
   // The side-by-side text column shrinks as the viewport narrows (its width
   // is `min(580px, calc(50% - 50px))`, so the gap between the front phone
@@ -174,6 +175,8 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
         { opacity: 1, x: 0, duration: 0.7, ease: "power2.out" },
         "shift",
       );
+      // Pill appears at the start of the shift (phones moving center → fan).
+      tl.call(() => setPillShown(true), [], "shift");
       // Typing kicks off mid-shift.
       tl.call(() => setTypingStarted(true), [], "shift+=0.3");
 
@@ -355,6 +358,22 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
           </div>
         </div>
       </div>
+      {/* "Redprint 2.0 coming soon" pill — positioned below the phone
+          fan in the left half of the section, so it reads as a caption
+          beneath the screenshots. Wide layouts only; narrow desktop
+          stacks text directly against the phones and there's no room. */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={pillShown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.5 }}
+        className="border-fg-base/20 bg-fg-base/[0.06] text-fg-base/80 font-body pointer-events-auto absolute bottom-[150px] left-1/3 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-[0.14em] min-[680px]:inline-flex"
+      >
+        <span className="relative flex h-2 w-2">
+          <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
+          <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
+        </span>
+        Redprint 2.0 coming soon
+      </motion.div>
       <RequestGymModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}

@@ -124,6 +124,14 @@ function MobileHero({
           </PhoneFrame>
         </div>
 
+        <div className="border-fg-base/20 bg-fg-base/[0.06] text-fg-base/80 font-body mt-8 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-[0.14em]">
+          <span className="relative flex h-2 w-2">
+            <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
+            <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
+          </span>
+          Redprint 2.0 coming soon
+        </div>
+
         <OrgMarquee />
       </div>
     </section>

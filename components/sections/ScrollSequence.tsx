@@ -42,6 +42,7 @@ import {
 } from "@/components/sections/TrackingCards";
 import { EquipmentCluster } from "@/components/sections/EquipmentCluster";
 import { orgs } from "@/lib/content/orgs";
+import { getLenisInstance } from "@/lib/lenis";
 import { useTheme } from "@/lib/useTheme";
 
 /**
@@ -1249,13 +1250,46 @@ export function ScrollSequence() {
       );
     },
   );
+  // Scroll lock for the footer auto-play. When the latch fires we stop
+  // Lenis so the user can't wheel past the sticky section before the
+  // sentence forms and all three silhouettes finish bouncing in.
+  // Silhouettes fire at footerAutoP=0.95 (= 2850ms post-latch), the last
+  // one has a 760ms stagger and 750ms bounce — so the visible animation
+  // ends ~4360ms post-latch. Plus a small grace for the easeOutBack
+  // settle.
+  useEffect(() => {
+    const FOOTER_LOCK_DURATION_MS = 4600;
+    let releaseTimer: number | null = null;
+    const unsub = footerAutoStartTime.on("change", (startT) => {
+      const lenis = getLenisInstance();
+      if (!lenis) return;
+      if (releaseTimer !== null) {
+        window.clearTimeout(releaseTimer);
+        releaseTimer = null;
+      }
+      if (startT > 0) {
+        lenis.stop();
+        releaseTimer = window.setTimeout(() => {
+          lenis.start();
+          releaseTimer = null;
+        }, FOOTER_LOCK_DURATION_MS);
+      } else {
+        lenis.start();
+      }
+    });
+    return () => {
+      unsub();
+      if (releaseTimer !== null) window.clearTimeout(releaseTimer);
+      getLenisInstance()?.start();
+    };
+  }, [footerAutoStartTime]);
   // Hybrid driver for the footer wheel rotation. Pre-latch it follows
   // nextSectionP (scroll-tied), so the wheel rotates while the user is
   // still scrolling into the footer phase. Post-latch it interpolates
   // smoothly from the latched value to 1 over the auto-play duration,
   // so the remaining ~2.5 turns play out on a timer regardless of
   // whether the user scrolls further. ringRotFinal uses this in place
-  // of nextSectionP for the footerSpin + final 70° offset terms.
+  // of nextSectionP for the footerSpin + final 132° offset terms.
   const footerSpinDriverP = useTransform(
     [
       nextSectionP,
@@ -1309,17 +1343,17 @@ export function ScrollSequence() {
       const footerSpinT = ns;
       const extraTurns =
         exitSpinT * 0.7 + tds * 2.0 + footerSpinT * 2.5;
-      // Final +70° canonical-orientation wind-up also rides the hybrid
+      // Final +132° canonical-orientation wind-up also rides the hybrid
       // driver so the wheel and logo land on the same final orientation
       // whether the user scrolled all the way or auto-play completed it.
-      const finalOffsetRad = (70 * Math.PI) / 180 * ns;
+      const finalOffsetRad = (132 * Math.PI) / 180 * ns;
       return base + extraTurns * 2 * Math.PI + finalOffsetRad;
     },
   );
   // ringRotFinal is in RADIANS (the LoadingRing maths uses sin/cos
   // on it). The centred RedprintMark is a motion.div whose `rotate`
   // expects DEGREES, so we convert. PURE conversion — no extra
-  // offset here, because the +70° canonical-orientation wind-up is
+  // offset here, because the +132° canonical-orientation wind-up is
   // baked into `ringRotFinal` itself, so the wheel and the emblem
   // share an identical rotation cadence the whole way through.
   const ringRotDeg = useTransform(
