@@ -55,6 +55,16 @@ function slotTransforms(slide: number, narrow: boolean) {
 const SLOT_Z = [40, 30, 20, 10, 0];
 
 /**
+ * Wide-layout fan metrics in design px (phone width 260 → height ≈563).
+ * Used to anchor the "2.0 coming soon" pill below the front phone and to
+ * shrink the whole fan+pill group on short viewports so they always fit.
+ */
+const PHONE_HALF_H = (260 * 19.5) / 9 / 2; // ≈ 282
+const PILL_GAP = 18;
+const PILL_H = 30;
+const FAN_BELOW_CENTER = PHONE_HALF_H + PILL_GAP + PILL_H;
+
+/**
  * Optional scroll-driven props. When `ScrollSequence` wraps Hero, it pipes
  * MotionValues down for the logo's rotation/opacity (so the logo can spin
  * with the scroll, then fade as a loading-mode BlobAvatar takes over).
@@ -99,6 +109,29 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+  // On short viewports, scale the whole phone fan (and its caption pill)
+  // down so the pill never collides with the bottom of the section. The
+  // fan is vertically centered, so the constraints are symmetric around
+  // the section's midline: keep the phone top clear of the nav (~76px)
+  // and the pill bottom clear of ScrollSequence's resting bottom-panel
+  // tab (64px tall, z-30 — it paints OVER the hero, so anything inside
+  // its band is hidden; 64 + 16px breathing room = 80).
+  const [fanScale, setFanScale] = useState(1);
+  useEffect(() => {
+    const update = () => {
+      const half = window.innerHeight / 2;
+      const s = Math.min(
+        1,
+        (half - 76) / PHONE_HALF_H,
+        (half - 80) / FAN_BELOW_CENTER,
+      );
+      setFanScale(Math.max(0.5, s));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   const slide = isNarrow ? 0 : 220;
   const slideRef = useRef(slide);
   const isNarrowRef = useRef(isNarrow);
@@ -259,6 +292,12 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
         {/* Phones — full container at ≥680px, top ~52% of section below
             that, so they always sit above (and never overlap) the text. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[48%] flex items-center justify-center min-[680px]:inset-0">
+          <div
+            className="relative flex h-full w-full items-center justify-center"
+            style={{
+              transform: isNarrow ? undefined : `scale(${fanScale})`,
+            }}
+          >
           {SCREENS.map(({ id, Component }, i) => {
             const slot = slotForScreen(i);
             // Refs only used during opening sequence (slots 0/1/2 get the
@@ -298,6 +337,32 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
               </motion.div>
             );
           })}
+
+          {/* "Redprint 2.0 coming soon" pill — anchored to the phone fan
+              (centered under the front phone), so it stays glued to the
+              screenshots at every viewport size and shrinks with them via
+              the fanScale wrapper. Wide layouts only; narrow desktop
+              stacks text directly against the phones and there's no room. */}
+          <div
+            className="absolute left-1/2 top-1/2 z-20 hidden min-[680px]:block"
+            style={{
+              transform: `translate(calc(-50% - ${slide}px), ${PHONE_HALF_H + PILL_GAP}px)`,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={pillShown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+              transition={{ duration: 0.5 }}
+              className="border-fg-base/20 bg-fg-base/[0.06] text-fg-base/80 font-body pointer-events-auto inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-[0.14em]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
+                <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
+              </span>
+              Redprint 2.0 coming soon
+            </motion.div>
+          </div>
+          </div>
         </div>
 
         {/* Text column — right side at ≥680px, bottom slab below that. On
@@ -358,22 +423,6 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
           </div>
         </div>
       </div>
-      {/* "Redprint 2.0 coming soon" pill — positioned below the phone
-          fan in the left half of the section, so it reads as a caption
-          beneath the screenshots. Wide layouts only; narrow desktop
-          stacks text directly against the phones and there's no room. */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={pillShown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-        transition={{ duration: 0.5 }}
-        className="border-fg-base/20 bg-fg-base/[0.06] text-fg-base/80 font-body pointer-events-auto absolute bottom-[150px] left-1/3 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-[0.14em] min-[680px]:inline-flex"
-      >
-        <span className="relative flex h-2 w-2">
-          <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
-          <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
-        </span>
-        Redprint 2.0 coming soon
-      </motion.div>
       <RequestGymModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
