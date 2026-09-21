@@ -156,7 +156,7 @@ export function Pillars({
             {/* Text block — sits above the box. */}
             <div style={{ height: TEXT_BLOCK_H }}>
               <div className="text-fg-muted font-body text-[11px] font-medium tracking-[0.14em]">
-                {p.index} — {p.label}
+                {p.index} · {p.label}
               </div>
               <h3 className="text-fg-base mt-2.5 text-[24px] font-medium leading-[1.15] tracking-tight">
                 {p.title}

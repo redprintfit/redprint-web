@@ -115,13 +115,13 @@ export function DownloadModal({
               <StoreColumn
                 store="app"
                 qrSrc="/qr/redprint_app_store_qr.png"
-                qrAlt="QR code — Download Redprint on the App Store"
+                qrAlt="QR code: download Redprint on the App Store"
                 href={APP_STORE_URL}
               />
               <StoreColumn
                 store="play"
                 qrSrc="/qr/redprint_play_store_qr.png"
-                qrAlt="QR code — Get Redprint on Google Play"
+                qrAlt="QR code: get Redprint on Google Play"
                 href={PLAY_STORE_URL}
               />
             </div>

@@ -134,7 +134,7 @@ export function AIChatbotView({
             <div>
               <TypewriterText
                 text={
-                  "Here's your chest day workout — 90 minutes of voluntarily making your pecs very angry:"
+                  "Here's your chest day workout: 90 minutes of voluntarily making your pecs very angry:"
                 }
                 start={false}
                 progress={m4a}
@@ -158,7 +158,7 @@ export function AIChatbotView({
                   progress={m4c}
                   n={1}
                   bold="Barbell Bench Press"
-                  rest="— 4x8 @ 135 lbs"
+                  rest="· 4x8 @ 135 lbs"
                 />
               )}
               {m4dStarted && (
@@ -166,7 +166,7 @@ export function AIChatbotView({
                   progress={m4d}
                   n={2}
                   bold="Barbell Incline Bench Press"
-                  rest="— 4x8 @ 115 lbs"
+                  rest="· 4x8 @ 115 lbs"
                 />
               )}
               {m4eStarted && (
@@ -174,7 +174,7 @@ export function AIChatbotView({
                   progress={m4e}
                   n={3}
                   bold="Dumbbell Incline Bench Press"
-                  rest="— 3x10 @ 50 lbs"
+                  rest="· 3x10 @ 50 lbs"
                 />
               )}
               {m4fStarted && (
@@ -182,7 +182,7 @@ export function AIChatbotView({
                   progress={m4f}
                   n={4}
                   bold="Dumbbell Fly"
-                  rest="— 3x12 @ 30 lbs"
+                  rest="· 3x12 @ 30 lbs"
                 />
               )}
               {m4gStarted && (
@@ -190,7 +190,7 @@ export function AIChatbotView({
                   progress={m4g}
                   n={5}
                   bold="Cable Crossover"
-                  rest="— 3x15 @ 30 lbs"
+                  rest="· 3x15 @ 30 lbs"
                 />
               )}
               {m4hStarted && (
@@ -198,7 +198,7 @@ export function AIChatbotView({
                   progress={m4h}
                   n={6}
                   bold="Cable Fly"
-                  rest="— 3x15 @ 25 lbs"
+                  rest="· 3x15 @ 25 lbs"
                 />
               )}
             </ol>

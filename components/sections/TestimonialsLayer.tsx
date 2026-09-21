@@ -118,7 +118,7 @@ export const TESTIMONIALS: Testimonial[] = [
     // orange we previously used.
     accent: "#00b34a",
     logoSrc: "/logos/gym_logos/ut_dallas_logo.jpg",
-    quote: "I've been waiting for an app like this — it's really useful.",
+    quote: "I've been waiting for an app like this. It's really useful.",
     anchor: { x: 22, y: 75 },
     phase: 0.55,
     cardSide: "right",

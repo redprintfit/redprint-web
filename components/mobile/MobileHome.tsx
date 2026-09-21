@@ -10,7 +10,7 @@ import { WorkoutHistoryAnalysisView } from "@/components/phone/screens/WorkoutHi
 import { orgs, type Org } from "@/lib/content/orgs";
 import { TESTIMONIALS } from "@/components/sections/TestimonialsLayer";
 import { RequestGymModal } from "@/components/RequestGymModal";
-import { ContactModal } from "@/components/ContactModal";
+import Link from "next/link";
 import { DownloadModal } from "@/components/DownloadModal";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -22,7 +22,6 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
  */
 export function MobileHome() {
   const [requestOpen, setRequestOpen] = useState(false);
-  const [contactOpen, setContactOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
 
   return (
@@ -38,17 +37,12 @@ export function MobileHome() {
         <MobileFinalCTA
           onDownload={() => setDownloadOpen(true)}
           onRequest={() => setRequestOpen(true)}
-          onContact={() => setContactOpen(true)}
         />
       </main>
       <SiteFooter />
       <RequestGymModal
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
-      />
-      <ContactModal
-        open={contactOpen}
-        onClose={() => setContactOpen(false)}
       />
       <DownloadModal
         open={downloadOpen}
@@ -129,7 +123,7 @@ function MobileHero({
             <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
             <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
           </span>
-          Redprint 2.0 coming soon
+          Redprint 2.0 out now!
         </div>
 
         <OrgMarquee />
@@ -368,7 +362,7 @@ function PillarCard({
   return (
     <div className="border-fg-base/15 bg-fg-base/[0.03] rounded-2xl border p-6">
       <div className="font-body text-fg-base/45 text-[11px] font-medium tracking-[0.14em]">
-        {index} — {label}
+        {index} · {label}
       </div>
       <h3 className="mt-2 text-[1.35rem] font-medium leading-[1.2] tracking-tight">
         {title}
@@ -455,11 +449,9 @@ function MobileTestimonials() {
 function MobileFinalCTA({
   onDownload,
   onRequest,
-  onContact,
 }: {
   onDownload: () => void;
   onRequest: () => void;
-  onContact: () => void;
 }) {
   return (
     <section className="border-fg-base/10 relative border-t px-5 py-20">
@@ -486,13 +478,12 @@ function MobileFinalCTA({
           >
             Request your gym
           </button>
-          <button
-            type="button"
-            onClick={onContact}
+          <Link
+            href="/for-gyms"
             className="text-fg-base/65 hover:text-fg-base font-body mt-1 text-sm font-medium underline-offset-4 transition hover:underline"
           >
-            Or get in touch
-          </button>
+            Redprint for gyms
+          </Link>
         </div>
       </div>
     </section>

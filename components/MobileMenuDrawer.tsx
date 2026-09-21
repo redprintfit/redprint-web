@@ -5,6 +5,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { WEB_APP_URL } from "@/lib/constants";
 
+/** One row in the drawer. Either navigates (`href`) or runs an action. */
+export type DrawerItem = {
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  /** Open `href` in a new window (external destinations). */
+  newWindow?: boolean;
+};
+
 /**
  * Full-screen menu overlay opened by the mobile nav hamburger. Items
  * stack center; each is a large tap target. Closes on backdrop / X /
@@ -14,17 +23,13 @@ import { WEB_APP_URL } from "@/lib/constants";
 export function MobileMenuDrawer({
   open,
   onClose,
-  onHowItWorks,
-  onTestimonials,
-  onContact,
-  onDownload,
+  items,
 }: {
   open: boolean;
   onClose: () => void;
-  onHowItWorks: () => void;
-  onTestimonials: () => void;
-  onContact: () => void;
-  onDownload: () => void;
+  /** Rows to show. The caller decides, so the gym page can offer a
+   *  gym-relevant menu instead of the member one. */
+  items: DrawerItem[];
 }) {
   useEffect(() => {
     if (!open) return;
@@ -88,10 +93,25 @@ export function MobileMenuDrawer({
           {/* Menu items — Outfit display font for the big headings;
               keeps the page's display/body type pairing. */}
           <nav className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-16">
-            <MenuItem onClick={wrap(onHowItWorks)}>How it works</MenuItem>
-            <MenuItem onClick={wrap(onTestimonials)}>Testimonials</MenuItem>
-            <MenuItem onClick={wrap(onContact)}>Contact us</MenuItem>
-            <MenuItem onClick={wrap(onDownload)}>Download the app</MenuItem>
+            {items.map((item) =>
+              item.href ? (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.newWindow ? "_blank" : undefined}
+                  rel={item.newWindow ? "noopener noreferrer" : undefined}
+                  onClick={onClose}
+                  className="text-fg-base hover:text-fg-base/70 block py-2 text-center text-[2rem] font-black leading-none transition"
+                  style={{ fontWeight: 900 }}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <MenuItem key={item.label} onClick={wrap(item.onClick ?? (() => {}))}>
+                  {item.label}
+                </MenuItem>
+              ),
+            )}
             <a
               href={WEB_APP_URL}
               className="text-fg-base hover:text-fg-base/70 font-body mt-4 text-base font-semibold transition"

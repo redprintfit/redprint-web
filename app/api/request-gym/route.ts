@@ -144,7 +144,7 @@ export async function POST(req: Request) {
   // delay the response or look like a submission failure to the user.
   const slack = process.env.REQUEST_GYM_SLACK_WEBHOOK;
   if (slack) {
-    const text = `:wave: New gym request — *${gym}* (${location}) — _${role}_\n${email}`;
+    const text = `:wave: New gym request: *${gym}* (${location}), _${role}_\n${email}`;
     fetch(slack, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

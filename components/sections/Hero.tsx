@@ -14,7 +14,7 @@ import { OrgCarousel } from "@/components/sections/OrgCarousel";
 import { TypewriterText } from "@/components/animations/TypewriterText";
 import { RedprintMark } from "@/components/RedprintMark";
 import { RequestGymModal } from "@/components/RequestGymModal";
-import { ContactModal } from "@/components/ContactModal";
+import Link from "next/link";
 
 const HEADLINE = "Fitness AI that knows your gym";
 const TICK_ORG_MS = 5000;
@@ -56,7 +56,7 @@ const SLOT_Z = [40, 30, 20, 10, 0];
 
 /**
  * Wide-layout fan metrics in design px (phone width 260 → height ≈563).
- * Used to anchor the "2.0 coming soon" pill below the front phone and to
+ * Used to anchor the "2.0 out now" pill below the front phone and to
  * shrink the whole fan+pill group on short viewports so they always fit.
  */
 const PHONE_HALF_H = (260 * 19.5) / 9 / 2; // ≈ 282
@@ -89,7 +89,6 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
   const [orgTick, setOrgTick] = useState(0);
   const [phoneTick, setPhoneTick] = useState(0);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [contactModalOpen, setContactModalOpen] = useState(false);
   const [typingStarted, setTypingStarted] = useState(false);
   const [openingDone, setOpeningDone] = useState(false);
   const [pillShown, setPillShown] = useState(false);
@@ -338,7 +337,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
             );
           })}
 
-          {/* "Redprint 2.0 coming soon" pill — anchored to the phone fan
+          {/* "Redprint 2.0 out now!" pill — anchored to the phone fan
               (centered under the front phone), so it stays glued to the
               screenshots at every viewport size and shrinks with them via
               the fanScale wrapper. Wide layouts only; narrow desktop
@@ -359,7 +358,7 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
                 <span className="bg-fg-base/40 absolute inset-0 animate-ping rounded-full" />
                 <span className="bg-fg-base/80 relative h-2 w-2 rounded-full" />
               </span>
-              Redprint 2.0 coming soon
+              Redprint 2.0 out now!
             </motion.div>
           </div>
           </div>
@@ -404,14 +403,15 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
           </div>
 
           <div ref={ctasRef} className="mt-6 flex flex-wrap items-center gap-3 opacity-0">
-            <button
-              type="button"
-              onClick={() => setContactModalOpen(true)}
+            {/* Operator on-ramp. Contact moved to the footer so this slot
+                can send gym owners to the gym side of the site. */}
+            <Link
+              href="/for-gyms"
               className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition"
             >
-              Contact us{" "}
+              Redprint for gyms{" "}
               <span className="text-lg leading-none">›</span>
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => setRequestModalOpen(true)}
@@ -426,10 +426,6 @@ export function Hero({ logoRotation, logoOpacity, logoSlotRef }: HeroProps = {})
       <RequestGymModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
-      />
-      <ContactModal
-        open={contactModalOpen}
-        onClose={() => setContactModalOpen(false)}
       />
     </section>
   );

@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { WEB_APP_URL } from "@/lib/constants";
-import { scrollToTop, scrollToVh } from "@/lib/lenis";
+import { designerUrl } from "@/lib/gyms/tagDraft";
+import { scrollToAnchor, scrollToTop, scrollToVh } from "@/lib/lenis";
 import { SCROLL_TARGETS } from "@/lib/scrollTargets";
 import { DownloadModal } from "@/components/DownloadModal";
 import { ContactModal } from "@/components/ContactModal";
-import { MobileMenuDrawer } from "@/components/MobileMenuDrawer";
+import { MobileMenuDrawer, type DrawerItem } from "@/components/MobileMenuDrawer";
 
 export function Nav() {
   const pathname = usePathname();
@@ -17,6 +18,11 @@ export function Nav() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // /for-gyms sells to operators, not members. Its nav points at that
+  // page's own sections and swaps the consumer Download CTA for the
+  // tag order flow; everywhere else keeps the member nav.
+  const isGymPage = pathname === "/for-gyms";
 
   // Wordmark behaviour:
   //   - On any non-home route, the parent <Link> handles client-side
@@ -71,11 +77,31 @@ export function Nav() {
       ? scrollToSection("mobile-testimonials", SCROLL_TARGETS.testimonials)
       : router.push("/#testimonials");
 
+  const goGymSection = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    scrollToAnchor(id);
+  };
+
+  const drawerItems: DrawerItem[] = isGymPage
+    ? [
+        { label: "Design your tag", onClick: () => scrollToAnchor("design-your-tag") },
+        { label: "What you get", onClick: () => scrollToAnchor("features") },
+        { label: "Order your tags", href: designerUrl(), newWindow: true },
+        { label: "Contact us", onClick: () => setContactOpen(true) },
+      ]
+    : [
+        { label: "How it works", onClick: onMobileHowItWorks },
+        { label: "Testimonials", onClick: onMobileTestimonials },
+        { label: "For gyms", href: "/for-gyms" },
+        { label: "Contact us", onClick: () => setContactOpen(true) },
+        { label: "Download the app", onClick: () => setDownloadOpen(true) },
+      ];
+
   return (
     <nav className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-4 md:p-6">
       <Link
         href="/"
-        aria-label="Redprint — back to top"
+        aria-label="Redprint, back to top"
         onClick={handleLogoClick}
         className="text-fg-base pointer-events-auto block"
       >
@@ -99,28 +125,66 @@ export function Nav() {
 
       {/* Desktop nav — hidden below md. Identical to the previous design. */}
       <div className="pointer-events-auto hidden items-center gap-6 md:flex">
-        <Link
-          href="/#hiw"
-          onClick={handleHowItWorks}
-          className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
-        >
-          How it works
-        </Link>
-        <Link
-          href="/#testimonials"
-          onClick={handleTestimonials}
-          className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
-        >
-          Testimonials
-        </Link>
+        {isGymPage ? (
+          <>
+            <a
+              href="#design-your-tag"
+              onClick={goGymSection("design-your-tag")}
+              className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+            >
+              Design your tag
+            </a>
+            <a
+              href="#features"
+              onClick={goGymSection("features")}
+              className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+            >
+              What you get
+            </a>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/#hiw"
+              onClick={handleHowItWorks}
+              className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+            >
+              How it works
+            </Link>
+            <Link
+              href="/#testimonials"
+              onClick={handleTestimonials}
+              className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+            >
+              Testimonials
+            </Link>
+            <Link
+              href="/for-gyms"
+              className="text-fg-base hover:text-fg-base/70 text-sm font-semibold transition"
+            >
+              For gyms
+            </Link>
+          </>
+        )}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setDownloadOpen(true)}
-            className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition"
-          >
-            Download
-          </button>
+          {isGymPage ? (
+            <a
+              href={designerUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition"
+            >
+              Order tags
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDownloadOpen(true)}
+              className="border-fg-base/30 text-fg-base hover:bg-fg-base/10 inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition"
+            >
+              Download
+            </button>
+          )}
           <a
             href={WEB_APP_URL}
             className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition"
@@ -133,13 +197,24 @@ export function Nav() {
 
       {/* Mobile nav — Download pill + hamburger. Visible only below md. */}
       <div className="pointer-events-auto flex items-center gap-2 md:hidden">
-        <button
-          type="button"
-          onClick={() => setDownloadOpen(true)}
-          className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-3.5 py-2 text-sm font-semibold transition"
-        >
-          Download
-        </button>
+        {isGymPage ? (
+          <a
+            href={designerUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-3.5 py-2 text-sm font-semibold transition"
+          >
+            Order tags
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDownloadOpen(true)}
+            className="bg-fg-base text-bg-base hover:bg-fg-base/90 inline-flex items-center rounded-full px-3.5 py-2 text-sm font-semibold transition"
+          >
+            Download
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setMenuOpen(true)}
@@ -177,10 +252,7 @@ export function Nav() {
       <MobileMenuDrawer
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onHowItWorks={onMobileHowItWorks}
-        onTestimonials={onMobileTestimonials}
-        onContact={() => setContactOpen(true)}
-        onDownload={() => setDownloadOpen(true)}
+        items={drawerItems}
       />
     </nav>
   );

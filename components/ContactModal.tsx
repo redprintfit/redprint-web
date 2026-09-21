@@ -67,7 +67,7 @@ export function ContactModal({
         }
         const msg =
           code === "invalid_email"
-            ? "That email doesn't look right — try again?"
+            ? "That email doesn't look right. Try again?"
             : code === "missing_fields"
               ? "Please fill in all three fields."
               : code === "server_misconfigured"
@@ -418,7 +418,7 @@ function ThankYou({
   return (
     <div className="py-4 pr-8">
       <h2 className="font-body text-[#ffffff] text-[1.5rem] font-bold leading-tight light:text-[#0a0a0a]">
-        Thanks — message received.
+        Thanks, message received.
       </h2>
       <p className="font-body text-[#ffffff]/70 mt-3 text-sm light:text-[#0a0a0a]/70">
         We&apos;ll get back to you within 48 hours. If you&apos;d rather talk

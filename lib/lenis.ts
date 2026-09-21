@@ -46,3 +46,25 @@ export function scrollToVh(absVh: number, opts?: { immediate?: boolean }) {
   }
   window.scrollTo({ top: px, behavior: opts?.immediate ? "auto" : "smooth" });
 }
+
+/**
+ * Smooth-scroll to an element by id, routed through Lenis so the motion
+ * matches the rest of the site (a native `scrollIntoView` fights Lenis's
+ * wheel handling and lands roughly).
+ *
+ * `offset` clears the fixed nav. Returns false when the id isn't on the
+ * current page, so callers can fall back to a route change.
+ */
+export function scrollToAnchor(id: string, offset = -90): boolean {
+  if (typeof document === "undefined") return false;
+  const el = document.getElementById(id);
+  if (!el) return false;
+  const lenis = getLenisInstance();
+  if (lenis) {
+    lenis.scrollTo(el, { offset });
+    return true;
+  }
+  const top = el.getBoundingClientRect().top + window.scrollY + offset;
+  window.scrollTo({ top, behavior: "smooth" });
+  return true;
+}
