@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Redprint",
+  title: "Terms of Service | Redprint",
   description: "The terms that govern your use of Redprint.",
 };
 

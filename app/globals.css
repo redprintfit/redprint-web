@@ -74,3 +74,78 @@ body {
     animation-play-state: paused !important;
   }
 }
+
+/* ==================================================================
+   /for-gyms — gym-facing marketing surface
+   ==================================================================
+   A darker, higher-contrast surface than the member-facing home page,
+   matching the approved gym-page design. Tokens are scoped to
+   `.gym-page` so nothing here leaks into the scroll sequence. */
+
+.gym-page {
+  --gym-bg: #131211;
+  --gym-fg: #ffffff;
+  --gym-muted: rgba(255, 255, 255, 0.62);
+  --gym-surface: rgba(255, 255, 255, 0.045);
+  --gym-surface-strong: rgba(255, 255, 255, 0.08);
+  --gym-border: rgba(255, 255, 255, 0.11);
+  --gym-accent: #ff3b34;
+  --gym-accent-ink: #ffffff;
+
+  background-color: var(--gym-bg);
+  color: var(--gym-fg);
+}
+
+:root[data-theme="light"] .gym-page {
+  --gym-bg: #f7f4ef;
+  --gym-fg: #12100f;
+  --gym-muted: rgba(18, 16, 15, 0.62);
+  --gym-surface: rgba(18, 16, 15, 0.035);
+  --gym-surface-strong: rgba(18, 16, 15, 0.07);
+  --gym-border: rgba(18, 16, 15, 0.12);
+  --gym-accent: #e4231c;
+  --gym-accent-ink: #ffffff;
+}
+
+/* The hero re-brands its dashboard facsimile every few seconds. Let
+   every tinted surface inside it glide to the new color instead of
+   snapping, matching the tag's gradient crossfade. */
+[data-dash] * {
+  transition:
+    background-color 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Scroll reveal. Sections start displaced and settle when they enter
+   the viewport — the same easing family the scroll sequence uses. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Offscreen sections skip layout+paint entirely. `contain-intrinsic-size`
+   keeps the scrollbar honest before a section has ever been rendered. */
+.gym-defer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Motion-sensitive visitors get the content, not the choreography. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

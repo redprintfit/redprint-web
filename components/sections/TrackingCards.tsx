@@ -39,7 +39,7 @@ export const TRACKING_CARDS: readonly CardData[] = [
     label: "DEPTH",
     title: "Every tool you need, built in.",
     description:
-      "Supersets, dropsets, 1RM, notes — plus hundreds of exercises in the library.",
+      "Supersets, dropsets, 1RM, notes, plus hundreds of exercises in the library.",
     anchor: "depth",
   },
   {

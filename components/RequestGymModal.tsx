@@ -70,7 +70,7 @@ export function RequestGymModal({
         // Friendly messages for known error codes.
         const msg =
           code === "invalid_email"
-            ? "That email doesn't look right — try again?"
+            ? "That email doesn't look right. Try again?"
             : code === "missing_fields"
               ? "Please fill in all three fields."
               : code === "server_misconfigured"

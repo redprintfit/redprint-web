@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
   const slack = process.env.REQUEST_GYM_SLACK_WEBHOOK;
   if (slack) {
-    const text = `:envelope: New contact form message — *${name}*\n${email}\n>>> ${message.slice(0, 400)}`;
+    const text = `:envelope: New contact form message from *${name}*\n${email}\n>>> ${message.slice(0, 400)}`;
     fetch(slack, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

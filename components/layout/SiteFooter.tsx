@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ContactModal } from "@/components/ContactModal";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/constants";
@@ -203,20 +204,26 @@ export function SiteFooter() {
               PRODUCT
             </div>
             <div className="flex flex-col gap-[14px]">
-              <a
+              <Link
                 href="/#hiw"
                 onClick={goHowItWorks}
                 className="text-sm text-[#F5F1EA] transition-opacity hover:opacity-80 light:text-[#0B0B0D]"
               >
                 How it works
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#testimonials"
                 onClick={goTestimonials}
                 className="text-sm text-[#F5F1EA] transition-opacity hover:opacity-80 light:text-[#0B0B0D]"
               >
                 Testimonials
-              </a>
+              </Link>
+              <Link
+                href="/for-gyms"
+                className="text-sm text-[#F5F1EA] transition-opacity hover:opacity-80 light:text-[#0B0B0D]"
+              >
+                For gyms
+              </Link>
               <a
                 href="#web-app"
                 className="text-sm text-[#F5F1EA] transition-opacity hover:opacity-80 light:text-[#0B0B0D]"
@@ -274,12 +281,12 @@ export function SiteFooter() {
             <div className="flex items-start gap-3">
               <StoreColumn
                 qrSrc="/qr/redprint_app_store_qr.png"
-                qrAlt="QR code — Download Redprint on the App Store"
+                qrAlt="QR code: download Redprint on the App Store"
                 store="app"
               />
               <StoreColumn
                 qrSrc="/qr/redprint_play_store_qr.png"
-                qrAlt="QR code — Get Redprint on Google Play"
+                qrAlt="QR code: get Redprint on Google Play"
                 store="play"
               />
             </div>

@@ -14,10 +14,10 @@ const STATS = {
 };
 
 const CAPTION =
-  "You lift more per session than 74% of lifters globally — keep pushing.";
+  "You lift more per session than 74% of lifters globally. Keep pushing.";
 
 const SCATTER_CAPTION =
-  "Conclusion: Longer sessions are translating into more volume — your body uses the extra time well.";
+  "Conclusion: Longer sessions are translating into more volume. Your body uses the extra time well.";
 
 const BAR_CAPTION = "Volume is trending upward across recent sessions.";
 
