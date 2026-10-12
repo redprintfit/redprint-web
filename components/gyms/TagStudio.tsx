@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { RedprintTag, type TagDesign } from "@/components/gyms/RedprintTag";
 import { Eyebrow, Reveal } from "@/components/gyms/GymUI";
@@ -15,9 +15,13 @@ type BrandResponse = {
   logoUrl: string | null;
   primary: string | null;
   secondary: string | null;
+  monochrome?: boolean;
+  palette?: string[];
   source: "ai" | "heuristic";
   finalUrl: string;
 };
+
+type Variant = { primary: string; secondary: string };
 
 /** Blank-tag colors used before a gym has been looked up — follow the
  *  theme so the tag isn't the one light object on a dark page. Dark
@@ -28,6 +32,66 @@ const BLANK_DARK = { primary: "#332f2e", secondary: "#1c1a19" };
 /** A brand with no usable color (black/white identities) gets a black tag. */
 const INK_PRIMARY = "#1c1c1c";
 const INK_SECONDARY = "#000000";
+/** The light alternative Regenerate ends on: white paper, warm shadow. */
+const PAPER = { primary: "#ffffff", secondary: "#e2dbd0" };
+const MAX_VARIANTS = 7;
+/** How long Regenerate shows its working state before the new tag lands. */
+const REGENERATE_MS = 450;
+
+const pair = (hex: string): Variant => ({ primary: hex, secondary: darken(hex, 34) });
+
+const distance = (a: string, b: string) => {
+  const ch = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  return Math.hypot(ch(a, 0) - ch(b, 0), ch(a, 1) - ch(b, 1), ch(a, 2) - ch(b, 2));
+};
+
+/**
+ * Every tag Regenerate can show, in order. Regenerate used to re-run the
+ * same lookup and land on the same tag (Oct 9 2026 review); now it walks
+ * this list, changing the background each time:
+ *
+ *   1. The brand pair the lookup chose. When that came from markup
+ *      heuristics alone, the logo's own color goes first instead: the logo
+ *      is a surer brand signal than CSS frequency. A black-and-white brand
+ *      with a black-and-white logo starts on the black tag.
+ *   2. The logo's color, if not already used.
+ *   3. The site's other plausible brand colors.
+ *   4. Black, then white.
+ *
+ * Near-duplicates are dropped so every press visibly changes the tag.
+ */
+function buildVariants(brand: BrandResponse, logo: LogoAnalysis | null): Variant[] {
+  const out: Variant[] = [];
+  const push = (v: Variant | null) => {
+    if (!v || out.length >= MAX_VARIANTS) return;
+    const p = normalizeHex(v.primary);
+    const s = normalizeHex(v.secondary);
+    if (!p || !s) return;
+    if (out.some((o) => distance(o.primary, p) < 40)) return;
+    out.push({ primary: p, secondary: s });
+  };
+
+  const brandPrimary = brand.monochrome ? null : normalizeHex(brand.primary);
+  const base = brandPrimary
+    ? { primary: brandPrimary, secondary: normalizeHex(brand.secondary) ?? darken(brandPrimary, 34) }
+    : null;
+  const logoColor = logo?.dominantColor && logo.colorShare >= 0.2 ? pair(logo.dominantColor) : null;
+  const ink = { primary: INK_PRIMARY, secondary: INK_SECONDARY };
+
+  if (base && brand.source === "ai") {
+    push(base);
+    push(logoColor);
+  } else if (base) {
+    push(logoColor);
+    push(base);
+  } else {
+    push(logoColor ?? ink);
+  }
+  for (const c of brand.palette ?? []) push(pair(c));
+  push(ink);
+  push(PAPER);
+  return out;
+}
 
 /**
  * Paste a website, see your tag.
@@ -44,21 +108,16 @@ export function TagStudio() {
   const [brand, setBrand] = useState<BrandResponse | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
   const [analysis, setAnalysis] = useState<LogoAnalysis | null>(null);
+  const [variantIndex, setVariantIndex] = useState(0);
+  const [regenerating, setRegenerating] = useState(false);
+  // The address the current result came from; Regenerate only cycles
+  // colors while the field still says the same thing.
+  const lookedUpRef = useRef<string | null>(null);
 
   const isDark = useTheme() === "dark";
   const blank = isDark ? BLANK_DARK : BLANK_LIGHT;
 
   const hasResult = brand !== null;
-  const hasColor = hasResult && !!normalizeHex(brand.primary);
-
-  // No brand color found means the brand is essentially black-and-white;
-  // a black tag is the right guess, not Redprint red.
-  const primary = !hasResult ? blank.primary : hasColor ? brand.primary! : INK_PRIMARY;
-  const secondary = !hasResult
-    ? blank.secondary
-    : hasColor
-      ? (brand.secondary ?? darken(normalizeHex(primary) ?? INK_PRIMARY, 34))
-      : INK_SECONDARY;
 
   // Logos go through the same-origin proxy so they can be sampled and
   // so hotlink-protected hosts don't blank the tag.
@@ -74,6 +133,11 @@ export function TagStudio() {
       cancelled = true;
     };
   }, [logoSrc]);
+
+  const variants = useMemo(() => (brand ? buildVariants(brand, analysis) : []), [brand, analysis]);
+  const variant = variants.length ? variants[variantIndex % variants.length] : null;
+  const primary = !hasResult ? blank.primary : (variant?.primary ?? INK_PRIMARY);
+  const secondary = !hasResult ? blank.secondary : (variant?.secondary ?? INK_SECONDARY);
 
   const tagLum = luminance(normalizeHex(primary) ?? INK_PRIMARY) * 0.5 +
     luminance(normalizeHex(secondary) ?? INK_SECONDARY) * 0.5;
@@ -98,13 +162,13 @@ export function TagStudio() {
       })
     : null;
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const lookup = async () => {
     if (!url.trim() || loading) return;
     setLoading(true);
     setError(null);
     setLogoFailed(false);
     setAnalysis(null);
+    setVariantIndex(0);
     try {
       const res = await fetch("/api/brand-lookup", {
         method: "POST",
@@ -121,12 +185,36 @@ export function TagStudio() {
         return;
       }
       setBrand(json as BrandResponse);
+      lookedUpRef.current = url.trim();
     } catch {
       setError("Something went wrong reaching our server. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    lookup();
+  };
+
+  // Next background. A different address in the field means a new gym, so
+  // that's a fresh lookup instead.
+  const regenerate = () => {
+    if (loading || regenerating) return;
+    if (url.trim() !== lookedUpRef.current) {
+      lookup();
+      return;
+    }
+    if (variants.length < 2) return;
+    setRegenerating(true);
+    window.setTimeout(() => {
+      setVariantIndex((i) => (i + 1) % variants.length);
+      setRegenerating(false);
+    }, REGENERATE_MS);
+  };
+
+  const busy = loading || regenerating;
 
   const buttonBase =
     "shrink-0 rounded-xl px-5 py-3 text-[15px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45";
@@ -138,12 +226,23 @@ export function TagStudio() {
     >
       <div className="mx-auto flex max-w-[560px] flex-col items-center text-center">
         <Reveal className="flex w-full flex-col items-center">
-          <RedprintTag
-            design={design}
-            width={272}
-            glow={hasResult}
-            onLogoError={() => setLogoFailed(true)}
-          />
+          {/* Dims and softens while Regenerate works, so the press visibly does something. */}
+          <div
+            aria-busy={busy}
+            className="transition-[opacity,filter,transform] duration-300 ease-out"
+            style={{
+              opacity: busy && hasResult ? 0.35 : 1,
+              filter: busy && hasResult ? "blur(3px)" : "none",
+              transform: busy && hasResult ? "scale(0.97)" : "none",
+            }}
+          >
+            <RedprintTag
+              design={design}
+              width={272}
+              glow={hasResult}
+              onLogoError={() => setLogoFailed(true)}
+            />
+          </div>
         </Reveal>
 
         <Reveal delay={0.08} className="w-full">
@@ -174,10 +273,11 @@ export function TagStudio() {
                   {/* Once there's a tag, generating again is the secondary
                       action and ordering is the primary one. */}
                   <button
-                    type="submit"
-                    disabled={!url.trim() || loading}
+                    type="button"
+                    onClick={regenerate}
+                    disabled={!url.trim() || busy}
                     aria-label="Regenerate tag"
-                    title="Regenerate"
+                    title="Try another color"
                     className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl transition disabled:cursor-not-allowed disabled:opacity-45"
                     style={{
                       background: "transparent",
@@ -185,7 +285,7 @@ export function TagStudio() {
                       border: "1px solid var(--gym-border)",
                     }}
                   >
-                    <RefreshCw size={18} className={loading ? "animate-spin" : undefined} />
+                    <RefreshCw size={18} className={busy ? "animate-spin" : undefined} />
                   </button>
                   <a
                     href={editHref ?? undefined}
@@ -215,7 +315,9 @@ export function TagStudio() {
               </p>
             )}
             <p className="font-body mt-3 text-[12px]" style={{ color: "var(--gym-muted)" }}>
-              See what your Redprint tag would look like
+              {hasResult && variants.length > 1
+                ? `Color ${(variantIndex % variants.length) + 1} of ${variants.length} · tap ↻ for another`
+                : "See what your Redprint tag would look like"}
             </p>
           </form>
         </Reveal>

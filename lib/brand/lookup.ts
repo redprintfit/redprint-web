@@ -17,16 +17,39 @@ import { isIP } from "node:net";
  * degrades to the heuristic result instead of failing.
  */
 
+/** Where a logo candidate came from; decides how much it looks like a logo. */
+export type LogoKind = "logo-img" | "touch-icon" | "icon" | "og-image";
+
+export type LogoCandidate = {
+  url: string;
+  kind: LogoKind;
+  /** Pixel size read from the file's header. Null for SVG (scales freely) or unknown. */
+  width: number | null;
+  height: number | null;
+  svg: boolean;
+  /** A JPEG: photographs are JPEGs, logos almost never are. */
+  jpeg: boolean;
+};
+
 export type BrandCandidates = {
   siteName: string | null;
   title: string | null;
   description: string | null;
-  /** Logo candidates, best-guess order. */
+  /** Logo candidates, best first: logo-ness, then SVG, then resolution. */
+  logos: LogoCandidate[];
+  /** Same order, URLs only. */
   images: string[];
   /** Colors declared in metadata (theme-color, mask-icon, tile color). */
   declaredColors: string[];
   /** Colors scraped from markup/CSS, most frequent first. */
   frequentColors: string[];
+  /**
+   * How colorful the site is. `saturated` and `total` count every hex color
+   * mention in the page and its own stylesheets; `top` is how often the
+   * leading brand candidate appears. A black-and-white brand has a handful
+   * of stray accent colors and nothing else.
+   */
+  colorStats: { saturated: number; total: number; top: number };
   finalUrl: string;
 };
 
@@ -35,6 +58,14 @@ export type BrandResult = {
   logoUrl: string | null;
   primary: string | null;
   secondary: string | null;
+  /**
+   * The brand reads as black / white / grey. The studio then leads with a
+   * black tag rather than promoting a stray link color to brand color
+   * (Oct 9 2026 review: a black brand came back blue).
+   */
+  monochrome: boolean;
+  /** Other plausible brand colors, best first; Regenerate cycles through them. */
+  palette: string[];
   source: "ai" | "heuristic";
   finalUrl: string;
 };
@@ -267,6 +298,8 @@ const CMS_DEFAULT_COLORS = new Set([
   "#f78da7", "#cf2e2e", "#ff6900", "#fcb900", "#9b51e0", "#abb8c3", "#0073aa",
   // Divi, Elementor, Bootstrap defaults
   "#2ea3f2", "#6ec1e4", "#61ce70", "#007bff", "#0d6efd", "#337ab7", "#0d47a1",
+  // Bootstrap 5 body text and focus ring
+  "#212529", "#86b7fe",
 ]);
 
 function expandHex(hex: string): string {
@@ -320,24 +353,44 @@ export async function scrapeCandidates(startUrl: URL): Promise<BrandCandidates> 
   const titleMatch = html.match(/<title[^>]*>([\s\S]{0,300}?)<\/title>/i);
   const title = titleMatch ? decodeEntities(titleMatch[1]).trim() : null;
 
-  const images: string[] = [];
-  const push = (u: string | null) => {
-    if (u && !images.includes(u)) images.push(u);
+  // Logo candidates, with where each came from. Ranked below, after their
+  // real pixel sizes are known.
+  const found: { url: string; kind: LogoKind; hint: number }[] = [];
+  const add = (u: string | null, kind: LogoKind, hint = 0) => {
+    if (u && !found.some((f) => f.url === u)) found.push({ url: u, kind, hint });
   };
 
-  // Images with "logo" in the markup are the strongest signal.
+  // Images with "logo" in the markup are the strongest signal. Lazy-loaded
+  // themes keep the real file in data-src, and srcset often carries a 2x
+  // or larger version of the same logo: take the biggest.
   for (const tag of imgs) {
-    const hay = `${attr(tag, "src") ?? ""} ${attr(tag, "alt") ?? ""} ${attr(tag, "class") ?? ""}`;
-    if (/logo|brand|wordmark/i.test(hay)) push(absolutize(attr(tag, "src"), finalUrl));
+    // Judge the file name and the tag's own labels, not the whole path: a
+    // photo under /masterbrand-homepage/ is not a logo (Life Time).
+    const fileName = (attr(tag, "src") ?? "").split("?")[0].split("/").pop() ?? "";
+    const labels = `${attr(tag, "alt") ?? ""} ${attr(tag, "class") ?? ""} ${attr(tag, "id") ?? ""}`;
+    if (!/logo|wordmark/i.test(fileName) && !/logo|brand|wordmark/i.test(labels)) continue;
+    const srcset = attr(tag, "srcset") ?? attr(tag, "data-srcset");
+    add(absolutize(largestFromSrcset(srcset), finalUrl), "logo-img");
+    add(absolutize(attr(tag, "data-src") ?? attr(tag, "data-lazy-src"), finalUrl), "logo-img");
+    add(absolutize(attr(tag, "src"), finalUrl), "logo-img");
   }
   for (const tag of links) {
     const rel = (attr(tag, "rel") ?? "").toLowerCase();
-    if (/apple-touch-icon|^icon$|shortcut icon|mask-icon/.test(rel)) {
-      push(absolutize(attr(tag, "href"), finalUrl));
+    // mask-icon is a single-color silhouette meant to be tinted by Safari;
+    // it prints as a flat blob, so it is never a logo candidate.
+    if (/apple-touch-icon/.test(rel)) {
+      add(absolutize(attr(tag, "href"), finalUrl), "touch-icon", sizesHint(attr(tag, "sizes")));
+    } else if (/^icon$|shortcut icon/.test(rel)) {
+      add(absolutize(attr(tag, "href"), finalUrl), "icon", sizesHint(attr(tag, "sizes")));
     }
   }
-  push(absolutize(metaBy("og:image"), finalUrl));
-  push(absolutize(metaBy("twitter:image"), finalUrl));
+  // Most sites serve a 180px touch icon at the conventional path even when
+  // the markup doesn't link it. A miss is dropped by the probe below.
+  add(absolutize("/apple-touch-icon.png", finalUrl), "touch-icon", 180);
+  add(absolutize(metaBy("og:image"), finalUrl), "og-image");
+  add(absolutize(metaBy("twitter:image"), finalUrl), "og-image");
+
+  const logos = await rankLogos(found.slice(0, 10));
 
   const declaredColors: string[] = [];
   const pushColor = (c: string | null) => {
@@ -352,15 +405,24 @@ export async function scrapeCandidates(startUrl: URL): Promise<BrandCandidates> 
     if ((attr(tag, "rel") ?? "").toLowerCase().includes("mask-icon")) pushColor(attr(tag, "color"));
   }
 
-  // Frequency-rank every hex in the markup, dropping greys and CMS
+  // Most sites keep their colors in a stylesheet, not the page, so the
+  // site's own CSS is read too (not CDN frameworks, which carry their own
+  // palettes and would drown the brand).
+  const css = await fetchOwnStylesheets(links, finalUrl);
+
+  // Frequency-rank every hex in the markup and CSS, dropping greys and CMS
   // defaults. Then, among the candidates that are roughly tied at the
   // top, prefer the brightest: when the count can't separate two brand
   // colors, the brighter one is the better tag background and gives a
   // logo more room to contrast.
   const counts = new Map<string, number>();
-  for (const m of html.matchAll(HEX_RE)) {
+  let total = 0;
+  let saturated = 0;
+  for (const m of `${html}\n${css}`.matchAll(HEX_RE)) {
     const hex = expandHex(m[0].toLowerCase());
+    total++;
     if (!isPlausibleBrandColor(hex)) continue;
+    saturated++;
     counts.set(hex, (counts.get(hex) ?? 0) + 1);
   }
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
@@ -377,11 +439,203 @@ export async function scrapeCandidates(startUrl: URL): Promise<BrandCandidates> 
     siteName: dec(metaBy("og:site_name") ?? metaBy("application-name")),
     title,
     description: dec(metaBy("og:description") ?? metaBy("description")),
-    images: images.slice(0, 10),
+    logos,
+    images: logos.map((l) => l.url),
     declaredColors,
     frequentColors,
+    colorStats: { saturated, total, top },
     finalUrl: finalUrl.toString(),
   };
+}
+
+/** "logo.png 1x, logo@2x.png 2x" or "a.png 300w, b.png 600w" → the biggest entry's URL. */
+function largestFromSrcset(srcset: string | null): string | null {
+  if (!srcset) return null;
+  let best: { url: string; size: number } | null = null;
+  for (const part of srcset.split(",")) {
+    const [url, descriptor = "1x"] = part.trim().split(/\s+/);
+    if (!url) continue;
+    const size = parseFloat(descriptor) * (descriptor.endsWith("w") ? 1 : 1000);
+    if (!best || size > best.size) best = { url, size };
+  }
+  return best?.url ?? null;
+}
+
+/** sizes="180x180" / "32x32 64x64" / "any" → the largest edge it promises. */
+function sizesHint(sizes: string | null): number {
+  if (!sizes) return 0;
+  if (/any/i.test(sizes)) return 1024;
+  return Math.max(0, ...[...sizes.matchAll(/(\d+)x(\d+)/gi)].map((m) => Math.max(+m[1], +m[2])));
+}
+
+const KIND_RANK: Record<LogoKind, number> = { "logo-img": 3, "touch-icon": 2, icon: 1, "og-image": 0 };
+// Below this, a raster "logo" prints soft on a tag; a large touch icon beats it.
+const MIN_SHARP_PX = 150;
+
+/**
+ * Measure each candidate (header bytes only) and order them for printing:
+ * real logos before icons before social images; within a kind, SVG first,
+ * then the most pixels. A small raster logo drops behind a big touch icon
+ * (Oct 9 2026 review: the logo came through low-res). Candidates that
+ * don't load are dropped.
+ */
+async function rankLogos(found: { url: string; kind: LogoKind; hint: number }[]): Promise<LogoCandidate[]> {
+  const probed = await Promise.all(
+    found.map(async (f) => {
+      const size = await probeImageSize(f.url);
+      if (!size) return null;
+      return {
+        url: f.url,
+        kind: f.kind,
+        width: size.svg ? null : size.width,
+        height: size.svg ? null : size.height,
+        svg: size.svg,
+        jpeg: !!size.jpeg,
+      } satisfies LogoCandidate;
+    }),
+  );
+  const ok = probed.filter((c): c is LogoCandidate => c !== null);
+  const edge = (c: LogoCandidate) => (c.svg ? Infinity : Math.max(c.width ?? 0, c.height ?? 0));
+  const rank = (c: LogoCandidate) => {
+    let r = KIND_RANK[c.kind];
+    if (c.kind === "logo-img" && !c.svg && edge(c) < MIN_SHARP_PX) r = 1.5; // below a sharp touch icon
+    if (c.jpeg) r = Math.min(r, 0.25); // a photo, whatever it was labelled
+    if (c.kind === "touch-icon" && edge(c) < MIN_SHARP_PX) r = 0.5;
+    return r;
+  };
+  return ok.sort((a, b) => rank(b) - rank(a) || edge(b) - edge(a));
+}
+
+const PROBE_BYTES = 64_000;
+const PROBE_TIMEOUT_MS = 3500;
+
+/** Width/height from an image's header. SVG reports svg:true. Null if it isn't an image. */
+async function probeImageSize(
+  url: string,
+): Promise<{ width: number; height: number; svg: boolean; jpeg?: boolean } | null> {
+  const attempt = (async () => {
+    try {
+      const { res } = await safeFetch(new URL(url), "image/*");
+      const type = (res.headers.get("content-type") ?? "").toLowerCase();
+      if (type.includes("svg") || /\.svg(\?|$)/i.test(url)) {
+        await res.body?.cancel().catch(() => {});
+        return { width: 0, height: 0, svg: true };
+      }
+      if (!type.startsWith("image/")) {
+        await res.body?.cancel().catch(() => {});
+        return null;
+      }
+      const bytes = await readCapped(res, PROBE_BYTES);
+      const dims = imageDimensions(bytes);
+      const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
+      return dims ? { ...dims, svg: false, jpeg } : { width: 0, height: 0, svg: false, jpeg };
+    } catch {
+      return null;
+    }
+  })();
+  const timeout = new Promise<null>((r) => setTimeout(() => r(null), PROBE_TIMEOUT_MS));
+  return Promise.race([attempt, timeout]);
+}
+
+/** PNG / GIF / WebP / JPEG / ICO dimensions from the first bytes of the file. */
+export function imageDimensions(b: Uint8Array): { width: number; height: number } | null {
+  const be16 = (i: number) => (b[i] << 8) | b[i + 1];
+  const le16 = (i: number) => b[i] | (b[i + 1] << 8);
+  const be32 = (i: number) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
+  const ascii = (i: number, n: number) => String.fromCharCode(...b.subarray(i, i + n));
+  if (b.length < 24) return null;
+
+  if (b[0] === 0x89 && ascii(1, 3) === "PNG") return { width: be32(16), height: be32(20) };
+  if (ascii(0, 4) === "GIF8") return { width: le16(6), height: le16(8) };
+  if (ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP") {
+    const chunk = ascii(12, 4);
+    if (chunk === "VP8X") {
+      return { width: 1 + (b[24] | (b[25] << 8) | (b[26] << 16)), height: 1 + (b[27] | (b[28] << 8) | (b[29] << 16)) };
+    }
+    if (chunk === "VP8 ") return { width: le16(26) & 0x3fff, height: le16(28) & 0x3fff };
+    if (chunk === "VP8L") {
+      return {
+        width: 1 + (((b[22] & 0x3f) << 8) | b[21]),
+        height: 1 + (((b[24] & 0x0f) << 10) | (b[23] << 2) | ((b[22] & 0xc0) >> 6)),
+      };
+    }
+    return null;
+  }
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) return null;
+      const marker = b[i + 1];
+      const isSof = marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker);
+      if (isSof) return { width: be16(i + 7), height: be16(i + 5) };
+      i += 2 + be16(i + 2);
+    }
+    return null;
+  }
+  if (b[0] === 0 && b[1] === 0 && b[2] === 1 && b[3] === 0) {
+    const count = le16(4);
+    let best = 0;
+    for (let n = 0; n < count && 6 + n * 16 + 1 < b.length; n++) {
+      best = Math.max(best, b[6 + n * 16] || 256);
+    }
+    return best ? { width: best, height: best } : null;
+  }
+  return null;
+}
+
+const STYLESHEET_BYTES = 400_000;
+// Third-party frameworks and plugin bundles: their palettes are not the gym's.
+// Many sites serve their own CSS from a CDN host (Crunch: cloudfront), so the
+// host isn't the test; public library CDNs and known bundles are.
+const VENDOR_CSS =
+  /bootstrap|font-?awesome|fontawesome|wp-includes|elementor\/assets|woocommerce|jquery|vendor|swiper|slick|animate\.|googleapis|gstatic|cdnjs|jsdelivr|unpkg|typekit|ajax\.cloudflare/i;
+
+/** Up to three of the site's own stylesheets, concatenated. Failures are ignored. */
+async function fetchOwnStylesheets(links: string[], base: URL): Promise<string> {
+  const hrefs: string[] = [];
+  for (const tag of links) {
+    if (!/stylesheet/i.test(attr(tag, "rel") ?? "")) continue;
+    const href = absolutize(attr(tag, "href"), base);
+    if (!href || VENDOR_CSS.test(href)) continue;
+    hrefs.push(href);
+    if (hrefs.length === 3) break;
+  }
+  const sheets = await Promise.all(
+    hrefs.map(async (href) => {
+      const attempt = (async () => {
+        try {
+          const { res } = await safeFetch(new URL(href), "text/css,*/*;q=0.1");
+          return new TextDecoder("utf-8").decode(await readCapped(res, STYLESHEET_BYTES));
+        } catch {
+          return "";
+        }
+      })();
+      const timeout = new Promise<string>((r) => setTimeout(() => r(""), PROBE_TIMEOUT_MS));
+      return Promise.race([attempt, timeout]);
+    }),
+  );
+  return sheets.join("\n");
+}
+
+/**
+ * How sure the markup is about a brand color.
+ *
+ *   brand        declared in metadata, or one saturated color recurs and color
+ *                is a real share of the palette
+ *   monochrome   plenty of colors on the site, almost all of them black, white
+ *                or grey: the saturated ones are a stray link-blue or plugin
+ *                accent, not the brand
+ *   unsure       too few colors to tell (styles we couldn't read)
+ *
+ * Only "brand" puts a color on the tag. The other two leave it to the logo's
+ * own color in the studio, then a black tag.
+ */
+function colorConfidence(c: BrandCandidates): "brand" | "monochrome" | "unsure" {
+  if (c.declaredColors.some(isPlausibleBrandColor)) return "brand";
+  const { saturated, total, top } = c.colorStats;
+  if (total >= 20 && saturated / total < 0.12) return "monochrome";
+  if (top >= 3) return "brand";
+  return total >= 20 ? "monochrome" : "unsure";
 }
 
 function decodeEntities(s: string): string {
@@ -400,12 +654,17 @@ function decodeEntities(s: string): string {
 
 /** Heuristic fallback used when Claude is unavailable or errors. */
 export function resolveHeuristically(c: BrandCandidates): BrandResult {
-  const colors = [...c.declaredColors, ...c.frequentColors].filter(isPlausibleBrandColor);
+  const colors = [...new Set([...c.declaredColors, ...c.frequentColors])].filter(isPlausibleBrandColor);
   const name = c.siteName ?? (c.title ? c.title.split(/[|–—\-·]/)[0].trim() : null);
+  const confidence = colorConfidence(c);
   return {
     name: name || null,
     logoUrl: c.images[0] ?? null,
-    primary: colors[0] ?? null,
+    // No color unless the site clearly has one: a guessed color is how a
+    // black brand came back blue. The studio fills in from the logo.
+    primary: confidence === "brand" ? (colors[0] ?? null) : null,
+    monochrome: confidence === "monochrome",
+    palette: colors.slice(0, 6),
     // Deliberately null. Frequency ranking cannot tell a real second
     // brand color from a CMS theme default (Divi blue, Bootstrap blue),
     // and pairing crimson with a stray #003399 produces a tag no gym
@@ -438,6 +697,11 @@ export async function resolveWithClaude(c: BrandCandidates): Promise<BrandResult
       logo_url: z.string().describe("The best logo URL from the candidates. Empty string if none are a real logo."),
       primary_color: z.string().describe("Primary brand color as a #rrggbb hex."),
       secondary_color: z.string().describe("A complementary second brand color as #rrggbb. May equal a darker primary."),
+      monochrome: z
+        .boolean()
+        .describe(
+          "True when the brand itself is black, white and/or grey (e.g. Equinox), so any saturated colors on the site are incidental. The colors above are then ignored.",
+        ),
     });
 
     const client = new Anthropic();
@@ -452,7 +716,10 @@ export async function resolveWithClaude(c: BrandCandidates): Promise<BrandResult
         "they appear in the markup of every site built on that platform. " +
         "If you are unsure which of two colors should be the background, always choose the brighter one. " +
         "The logo will be printed on top of the primary color, so make sure a typical logo (usually dark, white, or the brand's own accent) will contrast against it. " +
-        "Prefer a logo candidate that is an actual wordmark or emblem over a generic favicon or a photographic social-share image.",
+        "Prefer a logo candidate that is an actual wordmark or emblem over a generic favicon or a photographic social-share image. " +
+        "Among real logos, prefer SVG, then the one with the most pixels: it will be printed, and a small image prints blurry. " +
+        "Many gyms have a black-and-white identity. If the metadata declares no brand color and saturated colors are a small share of all colors on the site " +
+        "(see color_stats), the brand is probably monochrome: say so rather than promoting a stray link or plugin color to brand color.",
       messages: [
         {
           role: "user",
@@ -461,9 +728,19 @@ export async function resolveWithClaude(c: BrandCandidates): Promise<BrandResult
             site_name: c.siteName,
             title: c.title,
             description: c.description,
-            logo_candidates: c.images,
+            logo_candidates: c.logos.map((l) => ({
+              url: l.url,
+              found_as: l.kind,
+              format: l.svg ? "svg" : "raster",
+              size: l.svg ? "scalable" : l.width ? `${l.width}x${l.height}` : "unknown",
+            })),
             colors_declared_in_metadata: c.declaredColors,
             colors_by_frequency_in_markup: c.frequentColors,
+            color_stats: {
+              saturated_color_mentions: c.colorStats.saturated,
+              all_color_mentions: c.colorStats.total,
+              top_color_mentions: c.colorStats.top,
+            },
           }),
         },
       ],
@@ -472,11 +749,17 @@ export async function resolveWithClaude(c: BrandCandidates): Promise<BrandResult
     const out = response.parsed_output;
     if (!out) return null;
 
+    const primary = out.primary_color?.trim().toLowerCase() || null;
+    const secondary = out.secondary_color?.trim().toLowerCase() || null;
+    const heuristic = resolveHeuristically(c);
     return {
       name: out.name?.trim() || null,
       logoUrl: out.logo_url?.trim() || null,
-      primary: out.primary_color?.trim().toLowerCase() || null,
-      secondary: out.secondary_color?.trim().toLowerCase() || null,
+      primary: out.monochrome ? null : primary,
+      secondary: out.monochrome ? null : secondary,
+      monochrome: !!out.monochrome,
+      // Claude's pick first, then whatever else the site uses.
+      palette: [...new Set([primary, secondary, ...heuristic.palette].filter((x): x is string => !!x))].slice(0, 6),
       source: "ai",
       finalUrl: c.finalUrl,
     };
