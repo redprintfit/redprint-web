@@ -13,7 +13,8 @@ import { checkRateLimit, clientIp } from "@/lib/rateLimit";
  * POST /api/brand-lookup
  *
  * Body: { url: string }
- * Returns: { name, logoUrl, primary, secondary, source, finalUrl }
+ * Returns: { name, logoUrl, primary, secondary, monochrome, palette, source, finalUrl }
+ *   palette: other plausible brand colors, best first (Regenerate cycles them)
  *
  * Powers the /for-gyms tag studio: a gym pastes their website and gets
  * a rendered Redprint tag in their own colors before talking to anyone.
@@ -63,11 +64,18 @@ export async function POST(req: Request) {
     const secondary = normalizeHex(resolved.secondary);
     const fallback = resolveHeuristically(candidates);
 
+    // A black-and-white verdict stands: falling back to the heuristic's color
+    // here would bring back exactly the stray accent it was ruling out.
+    const monochrome = resolved.monochrome;
+    const palette = [...new Set(resolved.palette.map((c) => normalizeHex(c)).filter((c): c is string => !!c))];
+
     return NextResponse.json({
       name: resolved.name ?? fallback.name,
       logoUrl: safeHttpUrl(resolved.logoUrl) ?? safeHttpUrl(fallback.logoUrl),
-      primary: primary ?? normalizeHex(fallback.primary),
-      secondary: secondary ?? normalizeHex(fallback.secondary),
+      primary: monochrome ? null : (primary ?? normalizeHex(fallback.primary)),
+      secondary: monochrome ? null : (secondary ?? normalizeHex(fallback.secondary)),
+      monochrome,
+      palette,
       source: resolved.source,
       finalUrl: resolved.finalUrl,
     });
