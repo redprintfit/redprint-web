@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Inter, Bitcount_Grid_Single } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { Nav } from "@/components/layout/Nav";
 import { LenisProvider } from "@/components/animations/LenisProvider";
 
@@ -76,6 +77,11 @@ export default function RootLayout({
           <Nav />
           <main className="flex-1">{children}</main>
         </LenisProvider>
+        {/* Page views, referrers, devices. Cookieless — visitors are a
+            request hash that resets daily, so there is nothing to
+            consent to and no cross-site tracking. Custom events (button
+            clicks) would need a Vercel Pro plan; not wired up. */}
+        <Analytics />
       </body>
     </html>
   );
