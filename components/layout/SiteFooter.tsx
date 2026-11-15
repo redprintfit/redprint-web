@@ -309,12 +309,6 @@ export function SiteFooter() {
               Privacy Policy
             </a>
             <a
-              href="/delete-account"
-              className="text-xs text-[#7A7A80] transition-opacity hover:opacity-80 light:text-[#5a5a60]"
-            >
-              Delete account
-            </a>
-            <a
               href="/terms"
               className="text-xs text-[#7A7A80] transition-opacity hover:opacity-80 light:text-[#5a5a60]"
             >
