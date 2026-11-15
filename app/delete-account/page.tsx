@@ -2,19 +2,35 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Delete your Redprint account | Redprint",
+  title: "Delete your Redprint account",
   description:
-    "How to delete your Redprint account and what happens to your data.",
+    "How to request deletion of your Redprint account, what data is deleted, what we keep, and how long it takes.",
 };
 
 /**
- * Account deletion instructions. Public and reachable without signing in —
- * Google Play's Data safety form requires a URL that states the app and
- * developer name, how to request deletion, and what data is deleted,
- * anonymised, or kept. Keep those three things intact when editing.
+ * Account deletion instructions. Public, server-rendered, and reachable
+ * without signing in — this URL goes into the Play Console Data safety
+ * form, so it must load for a crawler with no JS and no session.
  *
- * Source of truth for the copy: ~/Desktop/RedprintReact.nosync/delete-account-page.md
+ * Google Play requires all of the following; keep them when editing:
+ *   - the app and developer name ("Redprint", "Redprint Inc.")
+ *   - a way to REQUEST deletion that works without the app (the email,
+ *     which is why it comes first, above the in-app steps)
+ *   - the steps to request it
+ *   - what is deleted, what is kept, and the retention period
+ *   - any prerequisite steps (here: cancelling a paid subscription)
+ *
+ * Copy is verbatim from ~/Desktop/RedprintReact.nosync/delete-account-page.md
  */
+
+/** Pre-fills the subject so requests arrive consistently labelled. */
+const DELETE_MAILTO =
+  "mailto:info@redprintfit.com?subject=Delete%20my%20Redprint%20account";
+
+function DeleteEmailLink() {
+  return <a href={DELETE_MAILTO}>info@redprintfit.com</a>;
+}
+
 export default function DeleteAccountPage() {
   return (
     <LegalPage title="Delete your Redprint account" lastUpdated="November 15, 2026">
@@ -24,7 +40,19 @@ export default function DeleteAccountPage() {
         on Google Play and the App Store) and what happens to your data.
       </p>
 
-      <h2>Option 1: Delete in the app</h2>
+      <h2>Request deletion by email (no app needed)</h2>
+      <p>
+        Email{" "}
+        <strong>
+          <DeleteEmailLink />
+        </strong>{" "}
+        from the address on your Redprint account, with the subject{" "}
+        <strong>&quot;Delete my Redprint account&quot;</strong>. You don&apos;t
+        need the app installed. We&apos;ll confirm by email when it&apos;s done,
+        within 30 days.
+      </p>
+
+      <h2>Or delete it yourself in the app</h2>
       <ol>
         <li>Open Redprint and sign in.</li>
         <li>
@@ -40,15 +68,13 @@ export default function DeleteAccountPage() {
         </li>
       </ol>
 
-      <h2>Option 2: Request deletion by email</h2>
+      <h2>If you have a paid subscription</h2>
       <p>
-        If you can&apos;t access the app, email{" "}
-        <strong>
-          <a href="mailto:info@redprintfit.com">info@redprintfit.com</a>
-        </strong>{" "}
-        from the address on your account, with the subject{" "}
-        <strong>&quot;Delete my Redprint account&quot;</strong>. We&apos;ll
-        confirm when it&apos;s done.
+        If you pay for Redprint Pro, cancel it before deleting your account:
+        open Redprint Pro in the app and tap <strong>Manage subscription</strong>
+        . If you no longer have the app, say so in your deletion email and
+        we&apos;ll cancel it for you. Pro paid for by your gym or school
+        doesn&apos;t need cancelling.
       </p>
 
       <h2>What gets deleted</h2>
@@ -95,8 +121,8 @@ export default function DeleteAccountPage() {
         <li>
           <strong>Purchase, payment and booking records</strong>, which
           we&apos;re legally required to keep for tax and accounting. Payments
-          are processed by Stripe and Google Play under their own retention
-          rules.
+          are processed by Stripe, which keeps its own records under its own
+          retention rules.
         </li>
         <li>
           <strong>Anonymous, aggregated statistics</strong> (for example, total
@@ -104,12 +130,10 @@ export default function DeleteAccountPage() {
         </li>
       </ul>
 
-      <p>Requests made by email are completed within 30 days.</p>
-
       <p>
         Questions? Contact{" "}
         <strong>
-          <a href="mailto:info@redprintfit.com">info@redprintfit.com</a>
+          <DeleteEmailLink />
         </strong>
         .
       </p>
