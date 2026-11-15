@@ -38,6 +38,7 @@ export function LegalPage({
             "[&_h4]:text-fg-base [&_h4]:mt-7 [&_h4]:mb-2 [&_h4]:text-[15px] [&_h4]:font-semibold",
             "[&_p]:mb-4",
             "[&_ul]:my-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:space-y-2",
+            "[&_ol]:my-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:space-y-2",
             "[&_strong]:text-fg-base [&_strong]:font-semibold",
             "[&_a]:text-fg-base [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:opacity-80",
           ].join(" ")}
